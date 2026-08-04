@@ -1,0 +1,3318 @@
+<meta charset="utf-8">
+<div id="trim-root"></div>
+<style>
+  #trim-root {
+    --bg1: #e9ebef;
+    --bg2: #f8efd9;
+    --panel: #ffffff;
+    --panel-soft: #f5f2ec;
+    --line: #eae5da;
+    --ink: #1a1b1f;
+    --ink-invert: #f7f5f0;
+    --muted: #8b8e94;
+    --amber: #f4c44e;
+    --amber-deep: #a9791f;
+    --positive: #3f8f74;
+    --negative: #d1573f;
+
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 640px;
+    border-radius: 28px;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.04), 0 24px 60px rgba(23,24,28,0.10);
+  }
+  #trim-root * { box-sizing: border-box; }
+  #trim-root .mono { font-family: 'IBM Plex Mono', 'SF Mono', 'Courier New', monospace; }
+
+  /* ---- Header ---- */
+  #trim-root .header {
+    padding: 26px 32px 18px 32px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  #trim-root .wordmark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ink);
+  }
+  #trim-root .wordmark span { color: var(--amber-deep); }
+  #trim-root .wordmark-logo { display: block; height: 102px; width: auto; }
+  #trim-root .tagline {
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    margin-top: 3px;
+  }
+  #trim-root .instrument-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* ---- Nav (pill segmented control) ---- */
+  #trim-root .nav {
+    display: flex;
+    gap: 6px;
+    padding: 6px 32px 20px 32px;
+  }
+  #trim-root .nav button {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  #trim-root .nav button:hover { color: var(--ink); border-color: #d8d3c6; }
+  #trim-root .nav button.active {
+    color: var(--ink-invert);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  #trim-root .nav button .dot {
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-left: 6px;
+    position: relative;
+    top: -1px;
+  }
+  #trim-root .nav button.disabled { color: #c3c0b8; cursor: default; }
+
+  /* ---- Body ---- */
+  #trim-root .body { padding: 6px 32px 34px 32px; }
+
+  /* ---- Gauge ticks decoration on cards ---- */
+  #trim-root .ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 3px;
+    margin-bottom: 8px;
+    opacity: 0.7;
+  }
+  #trim-root .ticks div { width: 1px; height: 5px; background: #e0dccf; }
+  #trim-root .ticks div:nth-child(3n) { height: 7px; background: var(--amber); }
+
+  /* ---- Stat cards ---- */
+  #trim-root .stat-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  #trim-root .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px 16px 16px;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.03), 0 6px 16px rgba(23,24,28,0.04);
+  }
+  #trim-root .stat-label {
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  #trim-root .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  #trim-root .stat-value.positive { color: var(--positive); }
+  #trim-root .stat-value.negative { color: var(--negative); }
+  #trim-root .stat-value.neutral { color: var(--ink); }
+  #trim-root .stat-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ---- Five-year board ---- */
+  #trim-root .board {
+    --cell: 20px;
+    --gap: 3px;
+    --green: var(--positive);
+    --yellow: #e0a92e;
+    --red: var(--negative);
+    --black: var(--ink);
+  }
+  #trim-root .board.dense-s { --cell: 14px; --gap: 2px; }
+  #trim-root .board.dense-l { --cell: 28px; --gap: 4px; }
+
+  #trim-root .board-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #trim-root .board-legend .leg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  #trim-root .board-legend .swatch {
+    width: 11px; height: 11px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+  #trim-root .board-legend .swatch.g { background: var(--green); border-color: var(--green); }
+  #trim-root .board-legend .swatch.y { background: var(--yellow); border-color: var(--yellow); }
+  #trim-root .board-legend .swatch.r { background: var(--red); border-color: var(--red); }
+  #trim-root .board-legend .swatch.b { background: var(--black); border-color: var(--black); }
+  #trim-root .board-legend .swatch.n { background: var(--panel); }
+
+  #trim-root .board-readout {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 15px;
+    margin-bottom: 12px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.03em;
+  }
+  #trim-root .board-readout .placeholder { color: var(--muted); letter-spacing: 0.06em; }
+  #trim-root .board-readout .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    flex: none;
+  }
+  #trim-root .board-readout .dot.g { background: var(--green); border-color: var(--green); }
+  #trim-root .board-readout .dot.y { background: var(--yellow); border-color: var(--yellow); }
+  #trim-root .board-readout .dot.r { background: var(--red); border-color: var(--red); }
+  #trim-root .board-readout .dot.b { background: var(--black); border-color: var(--black); }
+  #trim-root .board-readout .sep { color: #d5d0c2; }
+  #trim-root .board-readout .muted { color: var(--muted); }
+
+  #trim-root .board-band { margin-bottom: 20px; }
+  #trim-root .board-band-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-top: 1px solid #ddd7c8;
+    padding-top: 9px;
+    margin-bottom: 9px;
+  }
+  #trim-root .board-band-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+  }
+  #trim-root .board-band-range {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    color: var(--amber-deep);
+  }
+  #trim-root .board-band-meta {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  #trim-root .board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--cell), 1fr));
+    gap: var(--gap);
+  }
+  #trim-root .board-cell {
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--panel);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.08s ease;
+  }
+  #trim-root .board-cell:hover { transform: scale(1.22); z-index: 3; border-color: var(--amber-deep); }
+  #trim-root .board-cell[data-mark="g"] { background: var(--green); border-color: var(--green); }
+  #trim-root .board-cell[data-mark="y"] { background: var(--yellow); border-color: var(--yellow); }
+  #trim-root .board-cell[data-mark="r"] { background: var(--red); border-color: var(--red); }
+  #trim-root .board-cell[data-mark="b"] { background: var(--black); border-color: var(--black); }
+  #trim-root .board-cell.future:not([data-mark]) { background: var(--panel-soft); border-color: #efeade; }
+  /* amber rather than ink, so today stays visible on a black (didn't-trade) square */
+  #trim-root .board-cell.today { border-color: var(--amber-deep); border-width: 2px; }
+  /* month / quarter boundary ticks — dark inset bar stays visible over any fill */
+  #trim-root .board-cell.month-start { box-shadow: inset 2px 0 0 rgba(26,27,31,0.38); }
+  #trim-root .board-cell.quarter-start { box-shadow: inset 3px 0 0 rgba(26,27,31,0.75); }
+  #trim-root .board-cell:focus { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 4; }
+  #trim-root .board-cell.flash { animation: board-flash 0.9s ease-out 2; }
+  #trim-root .board-cell.has-comment::after {
+    content: '';
+    position: absolute;
+    top: 1px; right: 1px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--ink-invert);
+    border: 1px solid var(--ink);
+  }
+
+  #trim-root .board-comment {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 15px;
+    margin-bottom: 16px;
+  }
+  #trim-root .board-comment .placeholder {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  #trim-root .board-comment-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--amber-deep);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  #trim-root .board-comment textarea {
+    width: 100%;
+    min-height: 60px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding: 9px 11px;
+    border-radius: 10px;
+    resize: vertical;
+  }
+  #trim-root .board-comment textarea::placeholder { color: #b3aea0; }
+  #trim-root .board-comment-saved {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  @keyframes board-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(169,121,31,0); }
+    50% { box-shadow: 0 0 0 4px rgba(169,121,31,0.55); }
+  }
+
+  #trim-root .board-stack { display: flex; height: 100%; width: 100%; }
+  #trim-root .board-stack .seg { height: 100%; }
+  #trim-root .board-stack .seg.g { background: var(--green); }
+  #trim-root .board-stack .seg.y { background: var(--yellow); }
+  #trim-root .board-stack .seg.r { background: var(--red); }
+  #trim-root .board-stack .seg.b { background: var(--black); }
+
+  /* ---- Upload zone ---- */
+  #trim-root .upload-zone {
+    border: 1.5px dashed #d8d3c6;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 22px;
+    background: var(--panel-soft);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  #trim-root .upload-zone.dragover {
+    border-color: var(--amber-deep);
+    background: #fbf1d6;
+  }
+  #trim-root .upload-zone .icon-line {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--amber-deep);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  #trim-root .upload-zone .sub {
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-bottom: 14px;
+  }
+  #trim-root .upload-btn {
+    background: var(--ink);
+    color: var(--ink-invert);
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  #trim-root .upload-btn:hover { background: #2c2e34; }
+  #trim-root .upload-status {
+    margin-top: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--positive);
+  }
+  #trim-root .upload-status.error { color: var(--negative); }
+
+  /* ---- Table ---- */
+  #trim-root .table-wrap {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  #trim-root table { width: 100%; border-collapse: collapse; }
+  #trim-root thead { background: var(--panel-soft); }
+  #trim-root th {
+    text-align: left;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  #trim-root th:hover { color: var(--amber-deep); }
+  #trim-root th.sorted { color: var(--amber-deep); }
+  #trim-root td {
+    padding: 9px 12px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  #trim-root tbody tr:hover { background: var(--panel-soft); }
+  #trim-root tbody tr:last-child td { border-bottom: none; }
+  #trim-root td.pos { color: var(--positive); }
+  #trim-root td.neg { color: var(--negative); }
+  #trim-root .side-tag {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+  #trim-root .side-tag.long { background: rgba(63,143,116,0.12); color: var(--positive); }
+  #trim-root .side-tag.short { background: rgba(209,87,63,0.12); color: var(--negative); }
+  #trim-root .mood-select {
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 3px 5px;
+    border-radius: 6px;
+  }
+
+  /* ---- Empty state ---- */
+  #trim-root .empty {
+    text-align: center;
+    padding: 54px 20px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  #trim-root .empty .big { font-family: 'IBM Plex Mono', monospace; color: var(--amber-deep); font-size: 13px; margin-bottom: 8px; letter-spacing: 0.06em; font-weight: 700; }
+
+  /* ---- Coming soon panel ---- */
+  #trim-root .soon {
+    padding: 60px 30px;
+    text-align: center;
+    color: var(--muted);
+  }
+  #trim-root .soon .gauge-face {
+    width: 90px; height: 45px;
+    margin: 0 auto 18px auto;
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 90px 90px 0 0;
+    position: relative;
+    background: var(--panel-soft);
+  }
+  #trim-root .soon .gauge-needle {
+    position: absolute;
+    bottom: 0; left: 50%;
+    width: 1px; height: 34px;
+    background: #c9c3b3;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(-20deg);
+  }
+  #trim-root .soon h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    margin: 0 0 8px 0;
+  }
+  #trim-root .soon p { font-size: 12px; max-width: 380px; margin: 0 auto; line-height: 1.6; }
+  #trim-root .soon .phase {
+    display: inline-block;
+    margin-top: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--amber-deep);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+
+  #trim-root .footnote {
+    margin-top: 16px;
+    font-size: 10.5px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ---- Dashboard: filter bar ---- */
+  #trim-root .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 11px 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  #trim-root .filter-bar label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #trim-root .filter-bar input[type="date"] {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 8px;
+  }
+  #trim-root .filter-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--amber-deep);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  #trim-root .filter-btn:hover { background: #fbf1d6; border-color: var(--amber); }
+  #trim-root .filter-btn.ghost { color: var(--muted); border-color: var(--line); background: var(--panel); }
+  #trim-root .filter-count {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  #trim-root .filter-bar select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 8px;
+  }
+
+  /* ---- Journal ---- */
+  #trim-root .journal-form {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.03), 0 6px 16px rgba(23,24,28,0.04);
+  }
+  #trim-root .journal-form-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--amber-deep);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  #trim-root .journal-form-row {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  #trim-root .journal-form-row label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+  }
+  #trim-root .journal-form-row input[type="date"],
+  #trim-root .journal-form-row input[type="text"] {
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+  #trim-root .mood-label-row {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #trim-root .mood-current {
+    color: var(--amber-deep);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #trim-root .mood-picker {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  #trim-root .mood-pick {
+    width: 28px; height: 28px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--panel-soft);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #trim-root .mood-pick:hover { border-color: var(--amber); color: var(--ink); }
+  #trim-root .mood-pick.active {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #3d2f0a;
+    font-weight: 700;
+  }
+  #trim-root .coin-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #trim-root .coin {
+    width: 34px; height: 34px;
+    border-radius: 999px;
+    border: 1px solid #d8d3c6;
+    background: var(--panel-soft);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  #trim-root .coin:hover { border-color: var(--amber); color: var(--ink); transform: scale(1.06); }
+  #trim-root .coin.filled {
+    background: radial-gradient(circle at 34% 30%, #ffe9a8 0%, var(--amber) 55%, var(--amber-deep) 100%);
+    border-color: var(--amber-deep);
+    color: #3d2f0a;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), inset 0 -2px 2px rgba(169,121,31,0.35), 0 1px 3px rgba(169,121,31,0.35);
+  }
+  #trim-root .coin.filled:hover { transform: scale(1.1); }
+  #trim-root .journal-form textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding: 11px 13px;
+    border-radius: 12px;
+    resize: vertical;
+    margin-bottom: 14px;
+  }
+  #trim-root .journal-form textarea::placeholder { color: #b3aea0; }
+  #trim-root .journal-form-actions { display: flex; align-items: center; gap: 12px; }
+
+  #trim-root .journal-list { display: flex; flex-direction: column; gap: 12px; }
+  #trim-root .journal-entry {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 15px 18px;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.03), 0 4px 12px rgba(23,24,28,0.03);
+  }
+  #trim-root .journal-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 9px;
+  }
+  #trim-root .journal-entry-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+  #trim-root .journal-entry-mood {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+    color: var(--amber-deep);
+    background: #fbf1d6;
+    border: 1px solid #f0dfa8;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-weight: 600;
+  }
+  #trim-root .journal-entry-mood.pos { color: var(--positive); background: rgba(63,143,116,0.1); border-color: rgba(63,143,116,0.3); }
+  #trim-root .journal-entry-actions { margin-left: auto; display: flex; gap: 8px; }
+  #trim-root .mini-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  #trim-root .mini-btn:hover { color: var(--ink); border-color: #d8d3c6; }
+  #trim-root .mini-btn.danger { color: var(--negative); border-color: rgba(209,87,63,0.4); background: rgba(209,87,63,0.06); }
+  #trim-root .journal-entry-summary {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-bottom: 9px;
+  }
+  #trim-root .journal-entry-summary .pos { color: var(--positive); }
+  #trim-root .journal-entry-summary .neg { color: var(--negative); }
+  #trim-root .journal-entry-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+  #trim-root .tag-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--amber-deep);
+    background: #fbf1d6;
+    border: 1px solid #f0dfa8;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  #trim-root .tag-pill.pickable {
+    cursor: pointer;
+    color: var(--muted);
+    background: var(--panel-soft);
+    border-color: var(--line);
+    font-weight: 600;
+  }
+  #trim-root .tag-pill.pickable:hover { border-color: #d8d3c6; color: var(--ink); }
+  #trim-root .tag-pill.pickable.selected {
+    color: #3d2f0a;
+    background: var(--amber);
+    border-color: var(--amber);
+  }
+  #trim-root .check-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  #trim-root .check-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  #trim-root .check-row input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: var(--amber-deep);
+    cursor: pointer;
+  }
+  #trim-root .target-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; margin: 6px 0 4px 0; }
+  #trim-root .target-hint.pos { color: var(--positive); }
+  #trim-root .target-hint.neg { color: var(--negative); }
+  #trim-root .target-hint.muted { color: var(--muted); }
+  #trim-root .journal-entry-text {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+  #trim-root .journal-entry-text .empty-text { color: var(--muted); font-style: italic; }
+
+  /* ---- Dashboard: section labels ---- */
+  #trim-root .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    margin: 26px 0 12px 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  #trim-root .section-label:first-of-type { margin-top: 0; }
+  #trim-root .section-hint {
+    color: var(--muted);
+    letter-spacing: 0;
+    font-size: 9.5px;
+    text-transform: none;
+    font-weight: 400;
+  }
+  #trim-root .callout {
+    background: rgba(209,87,63,0.07);
+    border: 1px solid rgba(209,87,63,0.25);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--ink);
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  #trim-root .callout strong { color: var(--negative); }
+  #trim-root .callout.negative { background: rgba(209,87,63,0.07); border-color: rgba(209,87,63,0.25); }
+  #trim-root .callout.positive { background: rgba(63,143,116,0.08); border-color: rgba(63,143,116,0.25); }
+  #trim-root .callout.neutral { background: var(--panel-soft); border-color: var(--line); color: var(--muted); }
+
+  #trim-root .violation-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  #trim-root .violation-row:last-child { border-bottom: none; }
+  #trim-root .violation-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+    font-weight: 600;
+    min-width: 90px;
+  }
+  #trim-root .violation-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  #trim-root .violation-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--negative);
+    background: rgba(209,87,63,0.08);
+    border: 1px solid rgba(209,87,63,0.25);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  /* ---- Rules tab ---- */
+  #trim-root .rules-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.03), 0 6px 16px rgba(23,24,28,0.04);
+  }
+  #trim-root .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  #trim-root .rules-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 13px;
+  }
+  #trim-root .rules-field span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  #trim-root .rules-field input[type="number"] {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--amber-deep);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 7px 9px;
+    border-radius: 8px;
+  }
+  #trim-root .rules-panel textarea {
+    width: 100%;
+    min-height: 70px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding: 11px 13px;
+    border-radius: 12px;
+    resize: vertical;
+    margin-bottom: 6px;
+  }
+  #trim-root .rules-panel textarea::placeholder { color: #b3aea0; }
+  #trim-root .rules-updated {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+  }
+
+  #trim-root .bar-group {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 15px 18px;
+    box-shadow: 0 1px 2px rgba(23,24,28,0.03), 0 6px 16px rgba(23,24,28,0.04);
+  }
+  #trim-root .bar-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 90px 130px;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #trim-root .bar-row:last-child { border-bottom: none; }
+  #trim-root .bar-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+  }
+  #trim-root .bar-track {
+    background: var(--panel-soft);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  #trim-root .bar-fill { height: 100%; border-radius: 999px; }
+  #trim-root .bar-fill.pos { background: var(--positive); }
+  #trim-root .bar-fill.neg { background: var(--negative); }
+  #trim-root .bar-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-align: right;
+    font-weight: 600;
+  }
+  #trim-root .bar-value.pos { color: var(--positive); }
+  #trim-root .bar-value.neg { color: var(--negative); }
+  #trim-root .bar-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--muted);
+    text-align: right;
+  }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function() {
+  const root = document.getElementById('trim-root');
+  let activeTab = 'trades';
+  let trades = [];
+  let sortKey = 'entered_at';
+  let sortDir = 'desc';
+  let status = { msg: '', error: false };
+  let loading = true;
+  let dashFrom = '';
+  let dashTo = '';
+  let tradesFrom = '';
+  let tradesTo = '';
+  let journalEntries = [];
+  let journalFrom = '';
+  let journalTo = '';
+  let journalTagFilter = '';
+  let journalMistakeFilter = '';
+  let journalRulesBrokenOnly = false;
+  let journalDraft = null; // set when creating or editing an entry
+  let confirmDeleteId = null;
+  let rules = null;
+  let importSummary = null; // set after an import completes
+  let exportFallback = null; // JSON text shown if a download can't be triggered
+  let clearFrom = '';
+  let clearTo = '';
+  let clearArmed = null; // which destructive action is armed: 'range' | 'trades' | 'journal' | 'rules' | 'board' | 'all'
+  let boardMarks = {};   // sparse: { 'YYYY-MM-DD': 'g' | 'y' | 'r' }
+  let boardComments = {}; // sparse: { 'YYYY-MM-DD': 'free text' }
+  let boardPrefs = null;
+  let boardFlashDate = null; // date to scroll to and flash on the next board render
+  let boardFocusedDate = null; // last clicked/keyboard-focused day, drives the comment box (not hover)
+
+  const STORAGE_KEY = 'trim:trades:all';
+  const JOURNAL_KEY = 'trim:journal:entries';
+  const RULES_KEY = 'trim:rules:config';
+  const BOARD_KEY = 'trim:board:marks';
+  const BOARD_PREFS_KEY = 'trim:board:prefs';
+  const BOARD_COMMENTS_KEY = 'trim:board:comments';
+  const BACKUP_VERSION = 2;
+
+  function loadJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw !== null ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function saveJSON(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false; // e.g. quota exceeded, or localStorage unavailable (private mode)
+    }
+  }
+
+  const ADHERENCE_RULES = [
+    { id: 'stationSetup',    label: 'Trading Station has been setup to meet today\'s Trading rules prior to session start', emphasis: true },
+    { id: 'onlyPlanSetups',  label: 'Only traded the setups I planned for today' },
+    { id: 'respectedOpen',   label: 'Respected the no-trade window at the open' },
+    { id: 'stoppedAtEnd',    label: 'Stopped taking new trades at my session end time' },
+    { id: 'noRevenge',       label: 'Did not revenge trade after a loss' },
+    { id: 'tookBreak',       label: 'Took the mandatory break after consecutive losses' },
+    { id: 'sizeInPlan',      label: 'Stayed within my max size per trade' },
+    { id: 'withinLossLimit', label: 'Stayed within my daily loss limit' },
+    { id: 'stopHonoured',    label: 'Honoured every planned stop — never moved one' }
+  ];
+  const EMOTION_TAGS = ['Disciplined', 'Patient', 'Confident', 'Distracted', 'Anxious', 'Frustrated', 'Euphoric'];
+  const MISTAKE_TAGS = ['Revenge trade', 'FOMO', 'Overtrading', 'Hesitation', 'Early exit', 'Moved stop', 'Oversized', 'No stop', 'Off-plan setup'];
+  const COMBINE_COST = 120; // daily cost of the trading combine — the financial target
+
+  function defaultRules() {
+    return {
+      dailyLossLimit: 150,
+      maxTradesPerDay: 5,
+      maxSizePerTrade: 2,
+      maxConsecutiveLosses: 2,
+      sessionsToTrade: 'NY Open',
+      maxTimeBeforeBreak: 60,
+      notes: 'Opening 15-30 mins Rage Trade @ NY Open. No Trading from work laptop. Make sure to let go of work/family. Trading is a performance sport. Quick in/out market will crush you, stay greatful for what you can get today and leave.',
+      updated_at: null
+    };
+  }
+
+  function emptyDraft() {
+    return {
+      id: null, date: todayLocalStr(), mood: null, tags: [], text: '',
+      adherence: {}, emotionTags: [], mistakeTags: [], dayRating: null,
+      targetHit: false, targetRating: null
+    };
+  }
+
+  function normalizeEntry(e) {
+    return {
+      ...e,
+      adherence: e.adherence || {},
+      emotionTags: e.emotionTags || [],
+      mistakeTags: e.mistakeTags || [],
+      dayRating: e.dayRating != null ? e.dayRating : null,
+      targetHit: !!e.targetHit,
+      targetRating: e.targetRating != null ? e.targetRating : null
+    };
+  }
+
+  function parseTimestamp(str) {
+    // e.g. "07/01/2026 13:11:11 +02:00"
+    const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2}) ([+-]\d{2}):(\d{2})$/);
+    if (!m) return null;
+    const [, mo, d, y, h, mi, s, offH, offM] = m;
+    const iso = `${y}-${mo}-${d}T${h}:${mi}:${s}${offH}:${offM}`;
+    const dt = new Date(iso);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  function fmtLocalDate(dt) {
+    return dt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' });
+  }
+  function fmtLocalTime(dt) {
+    return dt.toLocaleTimeString('sv-SE', { timeZone: 'Europe/Stockholm', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  function fmtDuration(dt1, dt2) {
+    const secs = Math.round((dt2 - dt1) / 1000);
+    return fmtSeconds(secs);
+  }
+  function fmtSeconds(secs) {
+    secs = Math.round(secs);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+  function fmtMoney(n) {
+    const sign = n < 0 ? '-' : '';
+    return sign + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function todayLocalStr() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' });
+  }
+
+  /* ---------- Nasdaq trading calendar ----------
+     All arithmetic is done in UTC so daylight-saving shifts can never move a date. */
+
+  const BOARD_START = '2026-08-01';
+  const BOARD_END = '2031-07-31';
+  const BOARD_EXPECTED_DAYS = 1255; // guard: regressions in the holiday rules show up here
+  const BOARD_CYCLE = ['g', 'y', 'r', 'b'];
+  const BOARD_LABELS = { g: 'Followed my plan', y: 'Minor deviation', r: 'Broke my rules', b: "Didn't trade" };
+  // 'b' is a deliberate judgement, not a gap: it sits outside the discipline
+  // percentage and is stepped over by streaks rather than breaking them.
+  const BOARD_TRADED = ['g', 'y', 'r'];
+  const WD_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MO_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function utcFromISO(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  }
+  function isoFromUTC(dt) {
+    return dt.toISOString().slice(0, 10);
+  }
+  function addDaysUTC(dt, n) {
+    return new Date(dt.getTime() + n * 86400000);
+  }
+
+  // Easter Sunday, anonymous Gregorian algorithm.
+  function easterSundayUTC(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+    const d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(Date.UTC(y, month - 1, day));
+  }
+
+  function nthWeekdayUTC(y, month, weekday, n) {
+    const first = new Date(Date.UTC(y, month - 1, 1));
+    const offset = (weekday - first.getUTCDay() + 7) % 7;
+    return new Date(Date.UTC(y, month - 1, 1 + offset + 7 * (n - 1)));
+  }
+  function lastWeekdayUTC(y, month, weekday) {
+    const last = new Date(Date.UTC(y, month, 0)); // day 0 of the next month
+    return addDaysUTC(last, -((last.getUTCDay() - weekday + 7) % 7));
+  }
+  // Saturday -> preceding Friday, Sunday -> following Monday.
+  function observedUTC(dt) {
+    const wd = dt.getUTCDay();
+    if (wd === 6) return addDaysUTC(dt, -1);
+    if (wd === 0) return addDaysUTC(dt, 1);
+    return dt;
+  }
+
+  function marketHolidaySet(y) {
+    const out = new Set();
+    const add = dt => out.add(isoFromUTC(dt));
+
+    // A 1 Jan that falls on a Saturday is NOT pulled back to 31 Dec — the exchange
+    // does not close on the last trading day of the preceding year. Every other
+    // Saturday holiday is observed on the preceding Friday.
+    const newYear = new Date(Date.UTC(y, 0, 1));
+    if (newYear.getUTCDay() !== 6) add(observedUTC(newYear));
+
+    add(nthWeekdayUTC(y, 1, 1, 3));            // Martin Luther King Jr. Day
+    add(nthWeekdayUTC(y, 2, 1, 3));            // Washington's Birthday
+    add(addDaysUTC(easterSundayUTC(y), -2));   // Good Friday
+    add(lastWeekdayUTC(y, 5, 1));              // Memorial Day
+    add(observedUTC(new Date(Date.UTC(y, 5, 19))));  // Juneteenth
+    add(observedUTC(new Date(Date.UTC(y, 6, 4))));   // Independence Day
+    add(nthWeekdayUTC(y, 9, 1, 1));            // Labor Day
+    add(nthWeekdayUTC(y, 11, 4, 4));           // Thanksgiving
+    add(observedUTC(new Date(Date.UTC(y, 11, 25)))); // Christmas
+    return out;
+  }
+
+  // Weekdays between the two dates that the Nasdaq is open, as 'YYYY-MM-DD' strings.
+  // `closures` covers unscheduled closures (a state funeral, weather) that no rule predicts.
+  function nasdaqTradingDays(startISO, endISO, closures) {
+    const start = utcFromISO(startISO);
+    const end = utcFromISO(endISO);
+    const extra = new Set(closures || []);
+    const holidays = new Set();
+    for (let y = start.getUTCFullYear(); y <= end.getUTCFullYear(); y++) {
+      marketHolidaySet(y).forEach(d => holidays.add(d));
+    }
+    const out = [];
+    for (let dt = start; dt <= end; dt = addDaysUTC(dt, 1)) {
+      const wd = dt.getUTCDay();
+      if (wd === 0 || wd === 6) continue;
+      const iso = isoFromUTC(dt);
+      if (holidays.has(iso) || extra.has(iso)) continue;
+      out.push(iso);
+    }
+    return out;
+  }
+
+  function defaultBoardPrefs() {
+    return { density: 'm', closures: [] };
+  }
+
+  // The board's day list plus everything the renderer needs, rebuilt only when
+  // the closure overrides change.
+  let boardDaysCache = null;
+  function boardDays() {
+    const closures = (boardPrefs && boardPrefs.closures) || [];
+    const key = closures.join(',');
+    if (boardDaysCache && boardDaysCache.key === key) return boardDaysCache.days;
+    const days = nasdaqTradingDays(BOARD_START, BOARD_END, closures);
+    boardDaysCache = { key, days };
+    return days;
+  }
+
+  // Five Aug->Jul bands. Each band restarts the ribbon on a fresh row.
+  function boardBands() {
+    const days = boardDays();
+    const bands = [];
+    for (let i = 0; i < 5; i++) {
+      const from = `${2026 + i}-08-01`;
+      const to = `${2027 + i}-07-31`;
+      bands.push({
+        index: i + 1,
+        from, to,
+        label: `${MO_NAMES[7]} ${2026 + i} → ${MO_NAMES[6]} ${2027 + i}`,
+        days: days.filter(d => d >= from && d <= to)
+      });
+    }
+    return bands;
+  }
+
+  function fmtBoardDate(iso) {
+    const dt = utcFromISO(iso);
+    return `${WD_NAMES[dt.getUTCDay()]} ${dt.getUTCDate()} ${MO_NAMES[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+  }
+
+  function saveBoard() {
+    if (!saveJSON(BOARD_KEY, boardMarks)) {
+      status = { msg: 'Could not save to storage. Board marks may not persist.', error: true };
+    }
+  }
+  function saveBoardPrefs() {
+    saveJSON(BOARD_PREFS_KEY, boardPrefs);
+  }
+  function saveBoardComments() {
+    if (!saveJSON(BOARD_COMMENTS_KEY, boardComments)) {
+      status = { msg: 'Could not save comment to storage. It may not persist.', error: true };
+    }
+  }
+
+  function loadTrades() {
+    trades = loadJSON(STORAGE_KEY, []);
+    journalEntries = loadJSON(JOURNAL_KEY, []).map(normalizeEntry);
+    rules = { ...defaultRules(), ...loadJSON(RULES_KEY, {}) };
+    boardMarks = loadJSON(BOARD_KEY, {}) || {};
+    boardComments = loadJSON(BOARD_COMMENTS_KEY, {}) || {};
+    boardPrefs = { ...defaultBoardPrefs(), ...loadJSON(BOARD_PREFS_KEY, {}) };
+    if (!Array.isArray(boardPrefs.closures)) boardPrefs.closures = [];
+    loading = false;
+    render();
+  }
+
+  function saveTrades() {
+    if (!saveJSON(STORAGE_KEY, trades)) {
+      status = { msg: 'Could not save to storage. Data may not persist.', error: true };
+    }
+  }
+
+  function saveJournal() {
+    if (!saveJSON(JOURNAL_KEY, journalEntries)) {
+      status = { msg: 'Could not save journal to storage. Data may not persist.', error: true };
+    }
+  }
+
+  function saveRules() {
+    if (!saveJSON(RULES_KEY, rules)) {
+      status = { msg: 'Could not save rules to storage. Data may not persist.', error: true };
+    }
+  }
+
+  /* ---------- export / import ---------- */
+
+  function buildBackupPayload() {
+    return {
+      app: 'trim',
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      trades,
+      journalEntries,
+      rules: rules || defaultRules(),
+      boardMarks,
+      boardComments,
+      boardPrefs: boardPrefs || defaultBoardPrefs()
+    };
+  }
+
+  function exportData() {
+    exportFallback = null;
+    const json = JSON.stringify(buildBackupPayload(), null, 2);
+    try {
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `trim-backup-${todayLocalStr()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      status = { msg: 'Backup downloaded.', error: false };
+    } catch (e) {
+      exportFallback = json;
+      status = { msg: 'Could not trigger a download here — copy the backup text below instead.', error: true };
+    }
+    render();
+  }
+
+  function handleBackupFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      status = { msg: 'Please upload a .json backup file.', error: true };
+      importSummary = null;
+      render();
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      let data;
+      try {
+        data = JSON.parse(reader.result);
+      } catch (e) {
+        status = { msg: 'Could not read that file as a TRIM backup.', error: true };
+        importSummary = null;
+        render();
+        return;
+      }
+      if (!data || typeof data !== 'object' || (!data.trades && !data.journalEntries && !data.rules && !data.boardMarks)) {
+        status = { msg: 'That file does not look like a TRIM backup.', error: true };
+        importSummary = null;
+        render();
+        return;
+      }
+      if (data.app && data.app !== 'trim') {
+        status = { msg: `That file is a backup from "${data.app}", not TRIM.`, error: true };
+        importSummary = null;
+        render();
+        return;
+      }
+
+      let added = 0, skipped = 0;
+      if (Array.isArray(data.trades)) {
+        const existingIds = new Set(trades.map(t => t.id));
+        for (const t of data.trades) {
+          if (!t || !t.id) continue;
+          if (existingIds.has(t.id)) { skipped++; continue; }
+          trades.push(t);
+          existingIds.add(t.id);
+          added++;
+        }
+        await saveTrades();
+      }
+
+      let journalAdded = 0, journalSkipped = 0;
+      if (Array.isArray(data.journalEntries)) {
+        const existingIds = new Set(journalEntries.map(e => e.id));
+        for (const e of data.journalEntries) {
+          if (!e || !e.id) continue;
+          if (existingIds.has(e.id)) { journalSkipped++; continue; }
+          journalEntries.push(normalizeEntry(e));
+          existingIds.add(e.id);
+          journalAdded++;
+        }
+        await saveJournal();
+      }
+
+      let rulesReplaced = false;
+      if (data.rules && typeof data.rules === 'object') {
+        rules = { ...defaultRules(), ...data.rules };
+        await saveRules();
+        rulesReplaced = true;
+      }
+
+      // Board marks: a day already marked here wins, so importing a backup can
+      // fill gaps without silently overwriting judgements made since the export.
+      let boardAdded = 0, boardSkipped = 0;
+      if (data.boardMarks && typeof data.boardMarks === 'object') {
+        for (const [date, mark] of Object.entries(data.boardMarks)) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !BOARD_CYCLE.includes(mark)) continue;
+          if (boardMarks[date]) { boardSkipped++; continue; }
+          boardMarks[date] = mark;
+          boardAdded++;
+        }
+        saveBoard();
+      }
+      // Comments: same gap-fill rule as marks — an existing comment for a day wins.
+      let commentsAdded = 0, commentsSkipped = 0;
+      if (data.boardComments && typeof data.boardComments === 'object') {
+        for (const [date, text] of Object.entries(data.boardComments)) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || typeof text !== 'string' || !text.trim()) continue;
+          if (boardComments[date]) { commentsSkipped++; continue; }
+          boardComments[date] = text;
+          commentsAdded++;
+        }
+        saveBoardComments();
+      }
+      if (data.boardPrefs && Array.isArray(data.boardPrefs.closures)) {
+        const merged = new Set([...(boardPrefs.closures || []), ...data.boardPrefs.closures]);
+        boardPrefs.closures = [...merged].sort();
+        boardDaysCache = null;
+        saveBoardPrefs();
+      }
+
+      importSummary = { added, skipped, journalAdded, journalSkipped, rulesReplaced, boardAdded, boardSkipped, commentsAdded, commentsSkipped };
+      status = { msg: 'Import complete.', error: false };
+      render();
+    };
+    reader.onerror = () => {
+      status = { msg: 'Could not read that file.', error: true };
+      importSummary = null;
+      render();
+    };
+    reader.readAsText(file);
+  }
+
+  /* ---------- clear data ---------- */
+
+  function tradesInClearRange() {
+    return trades.filter(t => {
+      const d = tradeLocalDateStr(t);
+      if (clearFrom && d < clearFrom) return false;
+      if (clearTo && d > clearTo) return false;
+      return true;
+    });
+  }
+
+  function journalInClearRange() {
+    return journalEntries.filter(e => {
+      if (clearFrom && e.date < clearFrom) return false;
+      if (clearTo && e.date > clearTo) return false;
+      return true;
+    });
+  }
+
+  function afterClear(msg) {
+    status = { msg, error: false };
+    clearArmed = null;
+    render();
+  }
+
+  function clearByRange() {
+    const rangeIds = new Set(tradesInClearRange().map(t => t.id));
+    const journalIds = new Set(journalInClearRange().map(e => e.id));
+    trades = trades.filter(t => !rangeIds.has(t.id));
+    journalEntries = journalEntries.filter(e => !journalIds.has(e.id));
+    saveTrades();
+    saveJournal();
+    status = { msg: `Cleared ${rangeIds.size} trade${rangeIds.size === 1 ? '' : 's'} and ${journalIds.size} journal entr${journalIds.size === 1 ? 'y' : 'ies'} in range.`, error: false };
+    clearArmed = null;
+    clearFrom = '';
+    clearTo = '';
+    render();
+  }
+
+  function clearAllTrades() {
+    trades = [];
+    saveTrades();
+    afterClear('All trades cleared.');
+  }
+
+  function clearAllJournal() {
+    journalEntries = [];
+    saveJournal();
+    afterClear('All journal entries cleared.');
+  }
+
+  function resetRules() {
+    rules = defaultRules();
+    saveRules();
+    afterClear('Rules reset to defaults.');
+  }
+
+  function clearBoard() {
+    boardMarks = {};
+    boardComments = {};
+    boardFocusedDate = null;
+    saveBoard();
+    saveBoardComments();
+    afterClear('All board marks and comments cleared.');
+  }
+
+  function clearEverything() {
+    trades = [];
+    journalEntries = [];
+    rules = defaultRules();
+    boardMarks = {};
+    boardComments = {};
+    boardFocusedDate = null;
+    boardPrefs = defaultBoardPrefs();
+    boardDaysCache = null;
+    saveTrades();
+    saveJournal();
+    saveRules();
+    saveBoard();
+    saveBoardComments();
+    saveBoardPrefs();
+    afterClear('All TRIM data cleared.');
+  }
+
+  function normalizeRow(row) {
+    const enteredAt = parseTimestamp(row.EnteredAt || '');
+    const exitedAt = parseTimestamp(row.ExitedAt || '');
+    if (!enteredAt || !exitedAt || !row.Id) return null;
+    const pnl = parseFloat(row.PnL);
+    const fees = parseFloat(row.Fees || 0);
+    const commissions = parseFloat(row.Commissions || 0);
+    if (isNaN(pnl)) return null;
+    return {
+      id: String(row.Id),
+      contract: row.ContractName || '',
+      entered_at: enteredAt.toISOString(),
+      exited_at: exitedAt.toISOString(),
+      entry_price: parseFloat(row.EntryPrice),
+      exit_price: parseFloat(row.ExitPrice),
+      size: parseInt(row.Size, 10) || 0,
+      type: row.Type || '',
+      pnl_gross: pnl,
+      fees: isNaN(fees) ? 0 : fees,
+      commissions: isNaN(commissions) ? 0 : commissions,
+      pnl_net: pnl - (isNaN(fees) ? 0 : fees) - (isNaN(commissions) ? 0 : commissions),
+      duration_seconds: Math.round((exitedAt - enteredAt) / 1000),
+      mood: null
+    };
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      status = { msg: 'Please upload a .csv file.', error: true };
+      render();
+      return;
+    }
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data;
+        const existingIds = new Set(trades.map(t => t.id));
+        let added = 0, skipped = 0, invalid = 0;
+        for (const row of rows) {
+          const norm = normalizeRow(row);
+          if (!norm) { invalid++; continue; }
+          if (existingIds.has(norm.id)) { skipped++; continue; }
+          trades.push(norm);
+          existingIds.add(norm.id);
+          added++;
+        }
+        await saveTrades();
+        status = {
+          msg: `Imported ${added} new trade${added === 1 ? '' : 's'}.` +
+               (skipped ? ` ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped.` : '') +
+               (invalid ? ` ${invalid} row${invalid === 1 ? '' : 's'} could not be read.` : ''),
+          error: added === 0 && (skipped === 0)
+        };
+        render();
+      },
+      error: (err) => {
+        status = { msg: 'Could not parse file: ' + err.message, error: true };
+        render();
+      }
+    });
+  }
+
+  // Duration-by-outcome and win-rate-by-side breakdowns shared by the Trades
+  // tab (all trades) and the Dashboard tab (date-filtered trades).
+  function computeDurationAndSideStats(list) {
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    const winDurations = list.filter(t => t.pnl_net > 0).map(t => t.duration_seconds);
+    const lossDurations = list.filter(t => t.pnl_net < 0).map(t => t.duration_seconds);
+
+    const longs = list.filter(t => (t.type || '').toLowerCase() === 'long');
+    const shorts = list.filter(t => (t.type || '').toLowerCase() === 'short');
+
+    return {
+      avgDurationWin: avg(winDurations),
+      avgDurationLoss: avg(lossDurations),
+      longsCount: longs.length,
+      shortsCount: shorts.length,
+      winRateLong: longs.length ? (longs.filter(t => t.pnl_net > 0).length / longs.length) * 100 : null,
+      winRateShort: shorts.length ? (shorts.filter(t => t.pnl_net > 0).length / shorts.length) * 100 : null
+    };
+  }
+
+  function computeStats(list) {
+    list = list || trades;
+    const n = list.length;
+    if (n === 0) return null;
+    const grossTotal = list.reduce((s, t) => s + t.pnl_gross, 0);
+    const netTotal = list.reduce((s, t) => s + t.pnl_net, 0);
+    const costTotal = list.reduce((s, t) => s + t.fees + t.commissions, 0);
+    const wins = list.filter(t => t.pnl_net > 0).length;
+    const winRate = (wins / n) * 100;
+    const costDrag = grossTotal !== 0 ? (costTotal / Math.abs(grossTotal)) * 100 : 0;
+
+    return {
+      n, grossTotal, netTotal, costTotal, winRate, costDrag,
+      ...computeDurationAndSideStats(list)
+    };
+  }
+
+  function tradeLocalDateStr(t) {
+    return new Date(t.entered_at).toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' }); // YYYY-MM-DD
+  }
+
+  function filterTradesForDashboard() {
+    return trades.filter(t => {
+      const d = tradeLocalDateStr(t);
+      if (dashFrom && d < dashFrom) return false;
+      if (dashTo && d > dashTo) return false;
+      return true;
+    });
+  }
+
+  function filterTradesForTradesTab() {
+    return trades.filter(t => {
+      const d = tradeLocalDateStr(t);
+      if (tradesFrom && d < tradesFrom) return false;
+      if (tradesTo && d > tradesTo) return false;
+      return true;
+    });
+  }
+
+  function computeDashboardStats(list) {
+    const n = list.length;
+    if (n === 0) return null;
+    const grossTotal = list.reduce((s, t) => s + t.pnl_gross, 0);
+    const netTotal = list.reduce((s, t) => s + t.pnl_net, 0);
+    const costTotal = list.reduce((s, t) => s + t.fees + t.commissions, 0);
+    const winners = list.filter(t => t.pnl_net > 0);
+    const losers = list.filter(t => t.pnl_net < 0);
+    const scratch = n - winners.length - losers.length;
+    const winRate = (winners.length / n) * 100;
+    const sumWin = winners.reduce((s, t) => s + t.pnl_net, 0);
+    const sumLoss = losers.reduce((s, t) => s + t.pnl_net, 0); // negative
+    const avgWin = winners.length ? sumWin / winners.length : 0;
+    const avgLoss = losers.length ? sumLoss / losers.length : 0; // negative
+    const profitFactor = sumLoss !== 0 ? Math.abs(sumWin / sumLoss) : (sumWin > 0 ? Infinity : 0);
+    const winLossRatio = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : (avgWin > 0 ? Infinity : 0);
+    const costDrag = grossTotal !== 0 ? (costTotal / Math.abs(grossTotal)) * 100 : 0;
+    return {
+      n, grossTotal, netTotal, costTotal, winRate, winners: winners.length,
+      losers: losers.length, scratch, avgWin, avgLoss, profitFactor, winLossRatio, costDrag,
+      ...computeDurationAndSideStats(list)
+    };
+  }
+
+  function groupByField(list, keyFn) {
+    const groups = {};
+    for (const t of list) {
+      const key = keyFn(t);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    }
+    return Object.entries(groups).map(([key, items]) => {
+      const netTotal = items.reduce((s, t) => s + t.pnl_net, 0);
+      const grossTotal = items.reduce((s, t) => s + t.pnl_gross, 0);
+      const wins = items.filter(t => t.pnl_net > 0).length;
+      return {
+        key, count: items.length, netTotal, grossTotal,
+        winRate: (wins / items.length) * 100
+      };
+    });
+  }
+
+  function localHour(t) {
+    return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', hour: 'numeric', hourCycle: 'h23' }).format(new Date(t.entered_at));
+  }
+  function localWeekday(t) {
+    return new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Stockholm', weekday: 'short' }).format(new Date(t.entered_at));
+  }
+
+  function groupByDaySorted(list) {
+    const byDay = {};
+    for (const t of list) {
+      const day = tradeLocalDateStr(t);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(t);
+    }
+    for (const day in byDay) byDay[day].sort((a, b) => new Date(a.entered_at) - new Date(b.entered_at));
+    return byDay;
+  }
+
+  function computeSessionSegments(list) {
+    const byDay = groupByDaySorted(list);
+    const segmentMap = new Map();
+    for (const day in byDay) {
+      const dayTrades = byDay[day];
+      const start = new Date(dayTrades[0].entered_at).getTime();
+      const end = Math.max(...dayTrades.map(t => new Date(t.exited_at).getTime()));
+      const span = end - start;
+      for (const t of dayTrades) {
+        const frac = span > 0 ? (new Date(t.entered_at).getTime() - start) / span : 0;
+        let seg;
+        if (frac < 0.2) seg = 'First 20%';
+        else if (frac > 0.8) seg = 'Last 20%';
+        else seg = 'Middle 60%';
+        segmentMap.set(t.id, seg);
+      }
+    }
+    return segmentMap;
+  }
+
+  function computeStreaks(list) {
+    const byDay = groupByDaySorted(list);
+    let maxLen = 0, maxLenCost = 0;
+    let worstCost = 0, worstCostLen = 0;
+    let streaksOf3Plus = 0;
+    for (const day in byDay) {
+      let curLen = 0, curSum = 0;
+      const closeStreak = () => {
+        if (curLen >= 2) {
+          if (curLen >= 3) streaksOf3Plus++;
+          if (curLen > maxLen) { maxLen = curLen; maxLenCost = curSum; }
+          if (curSum < worstCost) { worstCost = curSum; worstCostLen = curLen; }
+        }
+        curLen = 0; curSum = 0;
+      };
+      for (const t of byDay[day]) {
+        if (t.pnl_net < 0) { curLen++; curSum += t.pnl_net; }
+        else { closeStreak(); }
+      }
+      closeStreak();
+    }
+    return { maxLen, maxLenCost, worstCost, worstCostLen, streaksOf3Plus };
+  }
+
+  function computeSequentialStats(list) {
+    const byDay = groupByDaySorted(list);
+    const gaps = { win: [], loss: [], scratch: [] };
+    const sizes = { win: [], loss: [], scratch: [] };
+    for (const day in byDay) {
+      const dayTrades = byDay[day];
+      for (let i = 0; i < dayTrades.length - 1; i++) {
+        const prev = dayTrades[i], next = dayTrades[i + 1];
+        const gapSec = Math.max(0, (new Date(next.entered_at) - new Date(prev.exited_at)) / 1000);
+        const outcome = prev.pnl_net < 0 ? 'loss' : (prev.pnl_net > 0 ? 'win' : 'scratch');
+        gaps[outcome].push(gapSec);
+        sizes[outcome].push(next.size);
+      }
+    }
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return {
+      avgGapAfterWin: avg(gaps.win), avgGapAfterLoss: avg(gaps.loss),
+      avgSizeAfterWin: avg(sizes.win), avgSizeAfterLoss: avg(sizes.loss),
+      nAfterWin: gaps.win.length, nAfterLoss: gaps.loss.length
+    };
+  }
+
+  function avgDurationByOutcome(list) {
+    const wins = list.filter(t => t.pnl_net > 0).map(t => t.duration_seconds);
+    const losses = list.filter(t => t.pnl_net < 0).map(t => t.duration_seconds);
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return { avgDurationWin: avg(wins), avgDurationLoss: avg(losses) };
+  }
+
+  function computeDayAggregates(list) {
+    const byDay = groupByDaySorted(list);
+    return Object.keys(byDay).sort().map(day => {
+      const dayTrades = byDay[day];
+      const netTotal = dayTrades.reduce((s, t) => s + t.pnl_net, 0);
+      const maxSize = Math.max(...dayTrades.map(t => t.size));
+      let curLossStreak = 0, maxLossStreak = 0;
+      for (const t of dayTrades) {
+        if (t.pnl_net < 0) { curLossStreak++; maxLossStreak = Math.max(maxLossStreak, curLossStreak); }
+        else curLossStreak = 0;
+      }
+      return { date: day, count: dayTrades.length, netTotal, maxSize, maxLossStreak };
+    });
+  }
+
+  function checkDayViolations(dayAgg, r) {
+    const violations = [];
+    if (r.dailyLossLimit != null && dayAgg.netTotal < -Math.abs(r.dailyLossLimit)) {
+      violations.push(`Daily loss limit: net ${fmtMoney(dayAgg.netTotal)} vs limit -${fmtMoney(Math.abs(r.dailyLossLimit))}`);
+    }
+    if (r.maxTradesPerDay != null && dayAgg.count > r.maxTradesPerDay) {
+      violations.push(`Max trades: ${dayAgg.count} vs limit ${r.maxTradesPerDay}`);
+    }
+    if (r.maxSizePerTrade != null && dayAgg.maxSize > r.maxSizePerTrade) {
+      violations.push(`Size limit: used ${dayAgg.maxSize} vs limit ${r.maxSizePerTrade}`);
+    }
+    if (r.maxConsecutiveLosses != null && dayAgg.maxLossStreak > r.maxConsecutiveLosses) {
+      violations.push(`Consecutive losses: ${dayAgg.maxLossStreak} vs limit ${r.maxConsecutiveLosses}`);
+    }
+    return violations;
+  }
+
+  function hasAnyEnforceableRule(r) {
+    return r.dailyLossLimit != null || r.maxTradesPerDay != null || r.maxSizePerTrade != null || r.maxConsecutiveLosses != null;
+  }
+
+  function sortTrades(list) {
+    const copy = [...list];
+    copy.sort((a, b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if (sortKey === 'entered_at' || sortKey === 'exited_at') {
+        av = new Date(av).getTime(); bv = new Date(bv).getTime();
+      }
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }
+
+  function setSort(key) {
+    if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+    else { sortKey = key; sortDir = 'desc'; }
+    render();
+  }
+
+  function renderStatRow(stats) {
+    if (!stats) return '';
+    const netClass = stats.netTotal > 0 ? 'positive' : (stats.netTotal < 0 ? 'negative' : 'neutral');
+    const grossClass = stats.grossTotal > 0 ? 'positive' : (stats.grossTotal < 0 ? 'negative' : 'neutral');
+    const ticks = Array.from({length: 9}).map(() => '<div></div>').join('');
+    return `
+      <div class="stat-row" style="grid-template-columns: repeat(6, 1fr);">
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Trades logged</div>
+          <div class="stat-value neutral">${stats.n}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Gross P&amp;L</div>
+          <div class="stat-value ${grossClass}">${fmtMoney(stats.grossTotal)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Net P&amp;L</div>
+          <div class="stat-value ${netClass}">${fmtMoney(stats.netTotal)}</div>
+          <div class="stat-sub">costs ${fmtMoney(stats.costTotal)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Total cost</div>
+          <div class="stat-value negative">${fmtMoney(stats.costTotal)}</div>
+          <div class="stat-sub">fees + commissions</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Win rate (net)</div>
+          <div class="stat-value neutral">${stats.winRate.toFixed(1)}%</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Cost drag</div>
+          <div class="stat-value neutral">${stats.costDrag.toFixed(1)}%</div>
+          <div class="stat-sub">of gross P&amp;L</div>
+        </div>
+      </div>
+      <div class="stat-row" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Avg duration (win)</div>
+          <div class="stat-value neutral">${stats.avgDurationWin !== null ? fmtSeconds(stats.avgDurationWin) : '—'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Avg duration (loss)</div>
+          <div class="stat-value neutral">${stats.avgDurationLoss !== null ? fmtSeconds(stats.avgDurationLoss) : '—'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Win rate (long)</div>
+          <div class="stat-value neutral">${stats.winRateLong !== null ? stats.winRateLong.toFixed(1) + '%' : '—'}</div>
+          <div class="stat-sub">${stats.longsCount} trade${stats.longsCount === 1 ? '' : 's'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="ticks">${ticks}</div>
+          <div class="stat-label">Win rate (short)</div>
+          <div class="stat-value neutral">${stats.winRateShort !== null ? stats.winRateShort.toFixed(1) + '%' : '—'}</div>
+          <div class="stat-sub">${stats.shortsCount} trade${stats.shortsCount === 1 ? '' : 's'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTable(list) {
+    const sorted = sortTrades(list || trades);
+    const cols = [
+      ['entered_at', 'Date'], ['entered_at', 'Time'], ['contract', 'Contract'],
+      ['type', 'Side'], ['size', 'Size'], ['entry_price', 'Entry'], ['exit_price', 'Exit'],
+      ['duration_seconds', 'Dur'], ['pnl_gross', 'Gross'], ['fees', 'Fees'], ['commissions', 'Comm'], ['pnl_net', 'Net'], ['mood', 'Mood']
+    ];
+    const headerHtml = cols.map(([key, label], i) => {
+      const isSorted = sortKey === key && label !== 'Time';
+      const sortable = key !== 'mood';
+      return `<th class="${isSorted ? 'sorted' : ''}" ${sortable ? `data-sortkey="${key}"` : ''} data-idx="${i}">${label}${isSorted ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}</th>`;
+    }).join('');
+
+    const moodOptions = (t) => {
+      let opts = `<option value="">–</option>`;
+      for (let n = 1; n <= 10; n++) {
+        opts += `<option value="${n}" ${t.mood === n ? 'selected' : ''}>${n}</option>`;
+      }
+      return opts;
+    };
+
+    const rows = sorted.map(t => {
+      const entered = new Date(t.entered_at);
+      const exited = new Date(t.exited_at);
+      return `
+        <tr>
+          <td>${fmtLocalDate(entered)}</td>
+          <td>${fmtLocalTime(entered)}</td>
+          <td>${t.contract}</td>
+          <td><span class="side-tag ${t.type.toLowerCase()}">${t.type}</span></td>
+          <td>${t.size}</td>
+          <td>${t.entry_price}</td>
+          <td>${t.exit_price}</td>
+          <td>${fmtDuration(entered, exited)}</td>
+          <td class="${t.pnl_gross >= 0 ? 'pos' : 'neg'}">${fmtMoney(t.pnl_gross)}</td>
+          <td>${fmtMoney(t.fees)}</td>
+          <td>${fmtMoney(t.commissions)}</td>
+          <td class="${t.pnl_net >= 0 ? 'pos' : 'neg'}">${fmtMoney(t.pnl_net)}</td>
+          <td><select class="mood-select" data-trade-id="${t.id}">${moodOptions(t)}</select></td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${headerHtml}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderTrades() {
+    const filtered = filterTradesForTradesTab();
+    const stats = computeStats(filtered);
+    const filterBar = `
+      <div class="filter-bar">
+        <label>FROM <input type="date" id="trades-from" value="${tradesFrom}"></label>
+        <label>TO <input type="date" id="trades-to" value="${tradesTo}"></label>
+        <button class="filter-btn" id="trades-apply">Apply</button>
+        <button class="filter-btn ghost" id="trades-clear">Clear</button>
+        <div class="filter-count">${filtered.length} of ${trades.length} trades</div>
+      </div>
+    `;
+    return `
+      <div class="upload-zone" id="upload-zone">
+        <div class="icon-line">&#9650; DROP CSV OR SELECT FILE</div>
+        <div class="sub">Imports your trade export. Existing trades are matched by ID — re-uploading is safe.</div>
+        <button class="upload-btn" id="upload-btn">Select CSV</button>
+        <input type="file" id="file-input" accept=".csv" style="display:none;">
+        ${status.msg ? `<div class="upload-status ${status.error ? 'error' : ''}">${status.msg}</div>` : ''}
+      </div>
+      ${trades.length === 0 ? '' : filterBar}
+      ${stats ? renderStatRow(stats) : ''}
+      ${trades.length === 0
+        ? `<div class="empty"><div class="big">NO TRADES LOGGED YET</div>Upload a CSV export to begin.</div>`
+        : (filtered.length === 0
+          ? `<div class="empty"><div class="big">NO TRADES IN RANGE</div>Adjust the date filter above.</div>`
+          : renderTable(filtered))}
+    `;
+  }
+
+  function statCard(ticks, label, value, cls, sub) {
+    return `
+      <div class="stat-card">
+        <div class="ticks">${ticks}</div>
+        <div class="stat-label">${label}</div>
+        <div class="stat-value ${cls || 'neutral'}">${value}</div>
+        ${sub ? `<div class="stat-sub">${sub}</div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderBarGroup(rows, labelFmt) {
+    if (rows.length === 0) return `<div class="empty" style="padding:24px;">No data in range.</div>`;
+    const maxAbs = Math.max(...rows.map(r => Math.abs(r.netTotal)), 1);
+    return rows.map(r => {
+      const pct = Math.max((Math.abs(r.netTotal) / maxAbs) * 100, 2);
+      const positive = r.netTotal >= 0;
+      return `
+        <div class="bar-row">
+          <div class="bar-label">${labelFmt(r.key)}</div>
+          <div class="bar-track">
+            <div class="bar-fill ${positive ? 'pos' : 'neg'}" style="width:${pct}%"></div>
+          </div>
+          <div class="bar-value ${positive ? 'pos' : 'neg'}">${fmtMoney(r.netTotal)}</div>
+          <div class="bar-meta">${r.count} trades · ${r.winRate.toFixed(0)}% win</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderDashboardTab() {
+    const filtered = filterTradesForDashboard();
+    const d = computeDashboardStats(filtered);
+
+    const filterBar = `
+      <div class="filter-bar">
+        <label>FROM <input type="date" id="dash-from" value="${dashFrom}"></label>
+        <label>TO <input type="date" id="dash-to" value="${dashTo}"></label>
+        <button class="filter-btn" id="dash-apply">Apply</button>
+        <button class="filter-btn ghost" id="dash-clear">Clear</button>
+        <div class="filter-count">${filtered.length} of ${trades.length} trades</div>
+      </div>
+    `;
+
+    if (!d) {
+      return filterBar + `<div class="empty"><div class="big">NO TRADES IN RANGE</div>Adjust the date filter or import trades on the Trades tab.</div>`;
+    }
+
+    const netClass = d.netTotal > 0 ? 'positive' : (d.netTotal < 0 ? 'negative' : 'neutral');
+    const grossClass = d.grossTotal > 0 ? 'positive' : (d.grossTotal < 0 ? 'negative' : 'neutral');
+    const pfDisplay = d.profitFactor === Infinity ? '∞' : d.profitFactor.toFixed(2);
+    const wlDisplay = d.winLossRatio === Infinity ? '∞' : d.winLossRatio.toFixed(2);
+    const ticks = Array.from({length: 9}).map(() => '<div></div>').join('');
+    const card = (label, value, cls, sub) => `
+      <div class="stat-card">
+        <div class="ticks">${ticks}</div>
+        <div class="stat-label">${label}</div>
+        <div class="stat-value ${cls || 'neutral'}">${value}</div>
+        ${sub ? `<div class="stat-sub">${sub}</div>` : ''}
+      </div>
+    `;
+
+    const bySide = [...groupByField(filtered, t => t.type)].sort((a, b) => b.count - a.count);
+    const byContract = [...groupByField(filtered, t => t.contract)].sort((a, b) => b.count - a.count);
+
+    // --- Phase 3: tilt-relevant metrics ---
+    const byHour = groupByField(filtered, t => localHour(t)).sort((a, b) => parseInt(a.key) - parseInt(b.key));
+    const weekdayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const byWeekday = groupByField(filtered, t => localWeekday(t))
+      .sort((a, b) => weekdayOrder.indexOf(a.key) - weekdayOrder.indexOf(b.key));
+    const segMap = computeSessionSegments(filtered);
+    const segOrder = ['First 20%', 'Middle 60%', 'Last 20%'];
+    const bySegment = groupByField(filtered, t => segMap.get(t.id))
+      .sort((a, b) => segOrder.indexOf(a.key) - segOrder.indexOf(b.key));
+
+    const streaks = computeStreaks(filtered);
+    const seq = computeSequentialStats(filtered);
+    const dur = avgDurationByOutcome(filtered);
+
+    const lastSegRow = bySegment.find(r => r.key === 'Last 20%');
+    const lastSegShare = (lastSegRow && d.netTotal !== 0)
+      ? (Math.abs(lastSegRow.netTotal) / Math.abs(d.netTotal) * 100) : null;
+
+    const gapDelta = (seq.avgGapAfterLoss !== null && seq.avgGapAfterWin !== null && seq.avgGapAfterWin > 0)
+      ? ((seq.avgGapAfterLoss - seq.avgGapAfterWin) / seq.avgGapAfterWin * 100) : null;
+    const sizeDelta = (seq.avgSizeAfterLoss !== null && seq.avgSizeAfterWin !== null && seq.avgSizeAfterWin > 0)
+      ? ((seq.avgSizeAfterLoss - seq.avgSizeAfterWin) / seq.avgSizeAfterWin * 100) : null;
+
+    return `
+      ${filterBar}
+      <div class="section-label">STANDARD PERFORMANCE</div>
+      <div class="stat-row" style="grid-template-columns: repeat(6, 1fr);">
+        ${card('Net P&amp;L', fmtMoney(d.netTotal), netClass, `gross ${fmtMoney(d.grossTotal)}`)}
+        ${card('Total cost', fmtMoney(d.costTotal), 'negative', 'fees + commissions')}
+        ${card('Win rate', d.winRate.toFixed(1) + '%', 'neutral', `${d.winners}W / ${d.losers}L${d.scratch ? ' / ' + d.scratch + ' scratch' : ''}`)}
+        ${card('Profit factor', pfDisplay, 'neutral', 'gross wins ÷ gross losses')}
+        ${card('Win / loss ratio', wlDisplay, 'neutral', 'avg win ÷ avg loss')}
+        ${card('Cost drag', d.costDrag.toFixed(1) + '%', 'neutral', fmtMoney(d.costTotal) + ' in fees')}
+      </div>
+      <div class="stat-row" style="grid-template-columns: repeat(3, 1fr);">
+        ${card('Avg win', fmtMoney(d.avgWin), 'positive')}
+        ${card('Avg loss', fmtMoney(d.avgLoss), 'negative')}
+        ${card('Trades', d.n, 'neutral')}
+      </div>
+      <div class="section-label">BY SIDE</div>
+      <div class="bar-group">${renderBarGroup(bySide, k => k || '—')}</div>
+
+      <div class="section-label">BY CONTRACT</div>
+      <div class="bar-group">${renderBarGroup(byContract, k => k || '—')}</div>
+
+      <div class="section-label">SESSION SEGMENT <span class="section-hint">— trade position within each day's session, by elapsed time</span></div>
+      <div class="bar-group">${renderBarGroup(bySegment, k => k)}</div>
+      ${lastSegShare !== null ? `<div class="callout">Last 20% of the session accounts for <strong>${lastSegShare.toFixed(0)}%</strong> of total net P&amp;L magnitude.</div>` : ''}
+
+      <div class="section-label">TIME OF DAY <span class="section-hint">— local time, Europe/Stockholm</span></div>
+      <div class="bar-group">${renderBarGroup(byHour, k => k + ':00')}</div>
+
+      <div class="section-label">DAY OF WEEK</div>
+      <div class="bar-group">${renderBarGroup(byWeekday, k => k)}</div>
+
+      <div class="section-label">LOSS STREAKS</div>
+      <div class="stat-row" style="grid-template-columns: repeat(4, 1fr);">
+        ${statCard(ticks, 'Longest streak', streaks.maxLen ? streaks.maxLen + ' trades' : '—', 'neutral', streaks.maxLen ? fmtMoney(streaks.maxLenCost) : '')}
+        ${statCard(ticks, 'Costliest streak', streaks.worstCostLen ? streaks.worstCostLen + ' trades' : '—', 'negative', streaks.worstCostLen ? fmtMoney(streaks.worstCost) : '')}
+        ${statCard(ticks, 'Streaks of 3+', streaks.streaksOf3Plus, 'neutral', 'losing streaks this length or longer')}
+        ${statCard(ticks, 'Duration: win vs loss', dur.avgDurationWin !== null ? fmtSeconds(dur.avgDurationWin) + ' / ' + fmtSeconds(dur.avgDurationLoss || 0) : '—', 'neutral', 'avg hold time')}
+      </div>
+
+      <div class="section-label">BEHAVIOR AFTER A LOSS <span class="section-hint">— compared to behavior after a win, same day</span></div>
+      <div class="stat-row" style="grid-template-columns: repeat(2, 1fr);">
+        ${statCard(ticks, 'Time to next trade', seq.avgGapAfterLoss !== null ? fmtSeconds(seq.avgGapAfterLoss) : '—',
+          gapDelta !== null && gapDelta < 0 ? 'negative' : 'neutral',
+          seq.avgGapAfterWin !== null ? `vs ${fmtSeconds(seq.avgGapAfterWin)} after a win${gapDelta !== null ? ` (${gapDelta > 0 ? '+' : ''}${gapDelta.toFixed(0)}%)` : ''}` : '')}
+        ${statCard(ticks, 'Size of next trade', seq.avgSizeAfterLoss !== null ? seq.avgSizeAfterLoss.toFixed(2) : '—',
+          sizeDelta !== null && sizeDelta > 0 ? 'negative' : 'neutral',
+          seq.avgSizeAfterWin !== null ? `vs ${seq.avgSizeAfterWin.toFixed(2)} after a win${sizeDelta !== null ? ` (${sizeDelta > 0 ? '+' : ''}${sizeDelta.toFixed(0)}%)` : ''}` : '')}
+      </div>
+
+      <div class="section-label">SELF-REPORTED CONDUCT <span class="section-hint">— from Journal entries in this date range</span></div>
+      ${renderSelfReportedConduct()}
+
+      <div class="section-label">RULE COMPLIANCE <span class="section-hint">— passive flag, checked against your Rules page</span></div>
+      ${renderRuleCompliance(filtered)}
+
+      <div class="footnote">This is a working log — come back after future sessions to see the patterns build up.</div>
+    `;
+  }
+
+  function renderSelfReportedConduct() {
+    const entries = journalEntries.filter(e => {
+      if (dashFrom && e.date < dashFrom) return false;
+      if (dashTo && e.date > dashTo) return false;
+      return true;
+    });
+    if (entries.length === 0) {
+      return `<div class="callout neutral">No journal entries in this date range yet. Log a day on the Journal tab to see adherence and mistake patterns here.</div>`;
+    }
+    const withAdherence = entries.map(adherenceCounts).filter(c => c.total > 0);
+    const avgAdherence = withAdherence.length
+      ? Math.round(withAdherence.reduce((s, c) => s + (c.passed / c.total) * 100, 0) / withAdherence.length)
+      : null;
+    const mistakeCounts = {};
+    entries.forEach(e => (e.mistakeTags || []).forEach(t => { mistakeCounts[t] = (mistakeCounts[t] || 0) + 1; }));
+    const mistakeRows = Object.entries(mistakeCounts)
+      .map(([key, count]) => ({ key, count, netTotal: -count, winRate: 0 }))
+      .sort((a, b) => b.count - a.count);
+
+    const summary = avgAdherence !== null
+      ? `<div class="callout ${avgAdherence >= 80 ? 'positive' : (avgAdherence < 50 ? 'negative' : 'neutral')}">Avg self-reported adherence: <strong>${avgAdherence}%</strong> across ${withAdherence.length} rated day${withAdherence.length === 1 ? '' : 's'}.</div>`
+      : `<div class="callout neutral">No adherence checklist answered yet in this range.</div>`;
+
+    const mistakesHtml = mistakeRows.length
+      ? `<div class="bar-group" style="margin-top:10px;">${mistakeRows.map(r => `
+          <div class="bar-row">
+            <div class="bar-label">${r.key}</div>
+            <div class="bar-track"><div class="bar-fill neg" style="width:${Math.max((r.count / mistakeRows[0].count) * 100, 2)}%"></div></div>
+            <div class="bar-value neg">${r.count}</div>
+            <div class="bar-meta">time${r.count === 1 ? '' : 's'} logged</div>
+          </div>
+        `).join('')}</div>`
+      : `<div class="empty" style="padding:24px;">No mistake tags logged in range.</div>`;
+
+    return summary + mistakesHtml;
+  }
+
+  function renderRuleCompliance(filteredTrades) {
+    const r = rules || defaultRules();
+    if (!hasAnyEnforceableRule(r)) {
+      return `<div class="callout neutral">No enforceable limits set yet. Add a daily loss limit, max trades, size limit, or consecutive-loss limit on the Rules tab to see this section come alive.</div>`;
+    }
+    const dayAggs = computeDayAggregates(filteredTrades);
+    const withViolations = dayAggs
+      .map(d => ({ ...d, violations: checkDayViolations(d, r) }))
+      .filter(d => d.violations.length > 0);
+
+    if (dayAggs.length === 0) {
+      return `<div class="empty" style="padding:24px;">No trades in range to check.</div>`;
+    }
+    if (withViolations.length === 0) {
+      return `<div class="callout positive">No rule violations in ${dayAggs.length} day${dayAggs.length === 1 ? '' : 's'} in range.</div>`;
+    }
+    const rows = withViolations.map(d => `
+      <div class="violation-row">
+        <div class="violation-date">${d.date}</div>
+        <div class="violation-badges">${d.violations.map(v => `<span class="violation-badge">${v}</span>`).join('')}</div>
+      </div>
+    `).join('');
+    return `
+      <div class="callout negative">${withViolations.length} of ${dayAggs.length} day${dayAggs.length === 1 ? '' : 's'} in range broke at least one rule.</div>
+      <div class="bar-group" style="margin-top:10px;">${rows}</div>
+    `;
+  }
+
+  function computeDayTradeSummary(dateStr) {
+    const dayTrades = trades.filter(t => tradeLocalDateStr(t) === dateStr);
+    if (!dayTrades.length) return null;
+    const netTotal = dayTrades.reduce((s, t) => s + t.pnl_net, 0);
+    const wins = dayTrades.filter(t => t.pnl_net > 0).length;
+    return { count: dayTrades.length, netTotal, winRate: (wins / dayTrades.length) * 100 };
+  }
+
+  function allJournalTags() {
+    const tagSet = new Set();
+    journalEntries.forEach(e => (e.tags || []).forEach(t => tagSet.add(t)));
+    return [...tagSet].sort();
+  }
+
+  function filterJournalEntries() {
+    return journalEntries
+      .filter(e => {
+        if (journalFrom && e.date < journalFrom) return false;
+        if (journalTo && e.date > journalTo) return false;
+        if (journalTagFilter && !(e.tags || []).includes(journalTagFilter)) return false;
+        if (journalMistakeFilter && !(e.mistakeTags || []).includes(journalMistakeFilter)) return false;
+        if (journalRulesBrokenOnly && adherenceCounts(e).failed === 0) return false;
+        return true;
+      })
+      .sort((a, b) => b.date.localeCompare(a.date) || (b.created_at || '').localeCompare(a.created_at || ''));
+  }
+
+  // Counts adherence answers for one entry. Unanswered rules are excluded from
+  // both passed/failed/total so a partially-filled checklist isn't scored as broken.
+  function adherenceCounts(entry) {
+    const a = entry.adherence || {};
+    const answered = ADHERENCE_RULES.filter(r => a[r.id] !== undefined && a[r.id] !== null);
+    const passed = answered.filter(r => a[r.id] === true).length;
+    return { passed, failed: answered.length - passed, total: answered.length };
+  }
+
+  function allMistakeTagsUsed() {
+    const set = new Set();
+    journalEntries.forEach(e => (e.mistakeTags || []).forEach(t => set.add(t)));
+    return MISTAKE_TAGS.filter(t => set.has(t));
+  }
+
+  function moodPickerHtml(selected, name, count) {
+    count = count || 10;
+    let buttons = '';
+    for (let n = 1; n <= count; n++) {
+      buttons += `<button type="button" class="mood-pick ${selected === n ? 'active' : ''}" data-mood-pick="${n}" data-mood-name="${name}">${n}</button>`;
+    }
+    return `<div class="mood-picker" data-mood-group="${name}">${buttons}</div>`;
+  }
+
+  // Coin-fill picker: every coin is the same size, filled gold up to the
+  // selected value (like a stack of caught combines) rather than only the
+  // exact pick lighting up. Reuses the mood-pick data attributes so the
+  // existing click handler in wireJournalTab works unchanged.
+  function coinPickerHtml(selected, name, count) {
+    count = count || 5;
+    let coins = '';
+    for (let n = 1; n <= count; n++) {
+      const filled = selected != null && n <= selected;
+      coins += `<button type="button" class="coin ${filled ? 'filled' : ''}" data-mood-pick="${n}" data-mood-name="${name}">${n}</button>`;
+    }
+    return `<div class="coin-picker" data-mood-group="${name}">${coins}</div>`;
+  }
+
+  function tagPillsHtml(list, selected, group) {
+    return `<div class="mood-picker" data-tag-group="${group}">${list.map(t =>
+      `<button type="button" class="tag-pill pickable ${selected.includes(t) ? 'selected' : ''}" data-tag-pill="${t}" data-tag-group="${group}">${t}</button>`
+    ).join('')}</div>`;
+  }
+
+  function renderJournalForm() {
+    const isEditing = !!journalDraft.id;
+    const a = journalDraft.adherence || {};
+    const checklistHtml = ADHERENCE_RULES.map(r => `
+      <label class="check-row">
+        <input type="checkbox" data-adherence="${r.id}" ${a[r.id] ? 'checked' : ''}>
+        <span${r.emphasis ? ' style="font-weight:700; color:var(--negative);"' : ''}>${r.label}</span>
+      </label>
+    `).join('');
+    const dayNet = computeDayTradeSummary(journalDraft.date);
+
+    return `
+      <div class="journal-form">
+        <div class="journal-form-header">${isEditing ? 'EDIT ENTRY' : 'NEW ENTRY'}</div>
+        <div class="journal-form-row">
+          <label>DATE <input type="date" id="journal-date" value="${journalDraft.date}"></label>
+          <label>TAGS <input type="text" id="journal-tags" placeholder="e.g. revenge trade, good discipline" value="${(journalDraft.tags || []).join(', ')}"></label>
+        </div>
+        <div class="journal-form-row">
+          <div class="mood-label-row">MOOD / TILT RATING${journalDraft.mood ? `<span class="mood-current">${journalDraft.mood}</span>` : ''}</div>
+          ${moodPickerHtml(journalDraft.mood, 'mood', 10)}
+        </div>
+
+        <div class="section-label">ADHERENCE CHECKLIST <span class="section-hint">— tick only what actually held today; leave the rest unchecked</span></div>
+        <div class="check-grid">${checklistHtml}</div>
+
+        <div class="mood-label-row" style="margin-top:14px;">HOW DID YOU FEEL?</div>
+        ${tagPillsHtml(EMOTION_TAGS, journalDraft.emotionTags || [], 'emotion')}
+
+        <div class="mood-label-row" style="margin-top:14px;">ANY MISTAKES?</div>
+        ${tagPillsHtml(MISTAKE_TAGS, journalDraft.mistakeTags || [], 'mistake')}
+
+        <div class="mood-label-row" style="margin-top:14px;">DAY RATING <span class="section-hint">— process, not P&amp;L</span>${journalDraft.dayRating ? `<span class="mood-current">${journalDraft.dayRating}</span>` : ''}</div>
+        ${moodPickerHtml(journalDraft.dayRating, 'dayRating', 5)}
+
+        <textarea id="journal-text" placeholder="How did the session feel? What triggered decisions today?" style="margin-top:14px;">${journalDraft.text || ''}</textarea>
+
+        <div class="section-label" style="margin-top:14px;">FINANCIAL TARGET</div>
+        <label class="check-row">
+          <input type="checkbox" id="journal-target-hit" ${journalDraft.targetHit ? 'checked' : ''}>
+          <span>Any Combines caught Today?</span>
+        </label>
+        ${dayNet
+          ? `<div class="target-hint ${dayNet.netTotal >= COMBINE_COST ? 'pos' : 'neg'}">${fmtMoney(dayNet.netTotal)} net today from ${dayNet.count} trade${dayNet.count === 1 ? '' : 's'} — ${dayNet.netTotal >= COMBINE_COST ? 'covers the $120 cost' : `${fmtMoney(COMBINE_COST - dayNet.netTotal)} short of it`}</div>`
+          : `<div class="target-hint muted">No trades logged for this date yet — nothing to compare against $120.</div>`}
+        <div style="margin-top:10px;">${coinPickerHtml(journalDraft.targetRating, 'targetRating', 5)}</div>
+
+        <div class="journal-form-actions" style="margin-top:22px;">
+          <button class="upload-btn" id="journal-save">Save entry</button>
+          ${isEditing ? `<button class="filter-btn ghost" id="journal-cancel">Cancel</button>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderJournalEntry(entry) {
+    const summary = computeDayTradeSummary(entry.date);
+    const netClass = summary && summary.netTotal > 0 ? 'pos' : (summary && summary.netTotal < 0 ? 'neg' : '');
+    const confirming = confirmDeleteId === entry.id;
+    const ac = adherenceCounts(entry);
+    const failedRules = ADHERENCE_RULES.filter(r => entry.adherence && entry.adherence[r.id] === false);
+    const adherenceClass = ac.total === 0 ? '' : (ac.failed === 0 ? 'pos' : (ac.passed === 0 ? 'neg' : ''));
+    return `
+      <div class="journal-entry">
+        <div class="journal-entry-header">
+          <div class="journal-entry-date">${entry.date}</div>
+          ${entry.mood ? `<div class="journal-entry-mood">MOOD ${entry.mood}</div>` : ''}
+          ${entry.dayRating ? `<div class="journal-entry-mood">DAY ${entry.dayRating}/5</div>` : ''}
+          ${entry.targetHit ? `<div class="journal-entry-mood pos">COMBINES CAUGHT</div>` : ''}
+          ${entry.targetRating ? `<div class="journal-entry-mood">COMBINES CAUGHT ${entry.targetRating}/5</div>` : ''}
+          <div class="journal-entry-actions">
+            <button class="mini-btn" data-edit-id="${entry.id}">Edit</button>
+            <button class="mini-btn ${confirming ? 'danger' : ''}" data-delete-id="${entry.id}">${confirming ? 'Confirm delete' : 'Delete'}</button>
+          </div>
+        </div>
+        ${summary ? `<div class="journal-entry-summary">${summary.count} trade${summary.count === 1 ? '' : 's'} that day · <span class="${netClass}">${fmtMoney(summary.netTotal)}</span> net · ${summary.winRate.toFixed(0)}% win rate</div>` : ''}
+        ${ac.total > 0 ? `<div class="journal-entry-summary ${adherenceClass}">RULES ${ac.passed}/${ac.total}</div>` : ''}
+        ${failedRules.length ? `<div class="journal-entry-tags">${failedRules.map(r => `<span class="violation-badge">${r.label}</span>`).join('')}</div>` : ''}
+        ${(entry.mistakeTags && entry.mistakeTags.length) ? `<div class="journal-entry-tags">${entry.mistakeTags.map(t => `<span class="violation-badge">${t}</span>`).join('')}</div>` : ''}
+        ${(entry.emotionTags && entry.emotionTags.length) ? `<div class="journal-entry-tags">${entry.emotionTags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+        ${(entry.tags && entry.tags.length) ? `<div class="journal-entry-tags">${entry.tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+        <div class="journal-entry-text">${entry.text ? entry.text.replace(/</g, '&lt;') : '<span class="empty-text">No notes.</span>'}</div>
+      </div>
+    `;
+  }
+
+  function renderJournalStats(filtered) {
+    if (filtered.length === 0) return '';
+    const withAdherence = filtered.map(adherenceCounts).filter(c => c.total > 0);
+    const avgAdherence = withAdherence.length
+      ? Math.round(withAdherence.reduce((s, c) => s + (c.passed / c.total) * 100, 0) / withAdherence.length)
+      : null;
+    const rated = filtered.filter(e => e.dayRating != null);
+    const avgRating = rated.length ? (rated.reduce((s, e) => s + e.dayRating, 0) / rated.length).toFixed(1) : null;
+    const targetHitRate = Math.round(filtered.filter(e => e.targetHit).length / filtered.length * 100);
+    const targetRated = filtered.filter(e => e.targetRating != null);
+    const avgTargetRating = targetRated.length ? (targetRated.reduce((s, e) => s + e.targetRating, 0) / targetRated.length).toFixed(1) : null;
+    const mistakeCounts = {};
+    filtered.forEach(e => (e.mistakeTags || []).forEach(t => { mistakeCounts[t] = (mistakeCounts[t] || 0) + 1; }));
+    const topMistake = Object.entries(mistakeCounts).sort((a, b) => b[1] - a[1])[0];
+    const ticks = Array.from({length: 9}).map(() => '<div></div>').join('');
+    return `
+      <div class="stat-row" style="grid-template-columns: repeat(4, 1fr);">
+        ${statCard(ticks, 'Entries in range', filtered.length, 'neutral')}
+        ${statCard(ticks, 'Avg adherence', avgAdherence !== null ? avgAdherence + '%' : '—', avgAdherence === null ? 'neutral' : (avgAdherence >= 80 ? 'positive' : (avgAdherence < 50 ? 'negative' : 'neutral')))}
+        ${statCard(ticks, 'Avg day rating', avgRating !== null ? avgRating + '/5' : '—', 'neutral')}
+        ${statCard(ticks, 'Top mistake', topMistake ? topMistake[0] : '—', topMistake ? 'negative' : 'neutral', topMistake ? topMistake[1] + ' time' + (topMistake[1] === 1 ? '' : 's') : '')}
+      </div>
+      <div class="stat-row" style="grid-template-columns: repeat(2, 1fr);">
+        ${statCard(ticks, 'Target hit rate', targetHitRate + '%', targetHitRate >= 80 ? 'positive' : (targetHitRate < 50 ? 'negative' : 'neutral'), '$120/day combine cost')}
+        ${statCard(ticks, 'Avg target rating', avgTargetRating !== null ? avgTargetRating + '/5' : '—', 'neutral')}
+      </div>
+    `;
+  }
+
+  function renderJournalTab() {
+    if (!journalDraft) {
+      journalDraft = emptyDraft();
+    }
+    const tags = allJournalTags();
+    const mistakesUsed = allMistakeTagsUsed();
+    const filtered = filterJournalEntries();
+
+    const filterBar = `
+      <div class="filter-bar">
+        <label>FROM <input type="date" id="journal-from" value="${journalFrom}"></label>
+        <label>TO <input type="date" id="journal-to" value="${journalTo}"></label>
+        <label>TAG
+          <select id="journal-tag-filter">
+            <option value="">All</option>
+            ${tags.map(t => `<option value="${t}" ${journalTagFilter === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </label>
+        <label>MISTAKE
+          <select id="journal-mistake-filter">
+            <option value="">All</option>
+            ${mistakesUsed.map(t => `<option value="${t}" ${journalMistakeFilter === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </label>
+        <label><input type="checkbox" id="journal-rules-broken" ${journalRulesBrokenOnly ? 'checked' : ''}> Rules broken only</label>
+        <button class="filter-btn" id="journal-apply">Apply</button>
+        <button class="filter-btn ghost" id="journal-clear">Clear</button>
+        <div class="filter-count">${filtered.length} of ${journalEntries.length} entries</div>
+      </div>
+    `;
+
+    const entriesHtml = filtered.length
+      ? filtered.map(renderJournalEntry).join('')
+      : `<div class="empty"><div class="big">NO ENTRIES${journalEntries.length ? ' IN RANGE' : ' YET'}</div>${journalEntries.length ? 'Adjust the filters above.' : 'Log your first entry above.'}</div>`;
+
+    return `
+      ${renderJournalForm()}
+      ${filterBar}
+      ${renderJournalStats(filtered)}
+      <div class="journal-list">${entriesHtml}</div>
+    `;
+  }
+
+  function wireJournalTab() {
+    // mood / day-rating / target-rating picker buttons (draft only, since entries themselves aren't inline-editable)
+    root.querySelectorAll('.mood-pick, .coin').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.moodPick, 10);
+        if (btn.dataset.moodName === 'dayRating') journalDraft.dayRating = val;
+        else if (btn.dataset.moodName === 'targetRating') journalDraft.targetRating = val;
+        else journalDraft.mood = val;
+        render();
+      });
+    });
+
+    // Double-clicking the first coin clears the rating entirely — the only way
+    // back to "unrated" since there's no zero coin to click.
+    root.querySelectorAll('.coin[data-mood-pick="1"]').forEach(btn => {
+      btn.addEventListener('dblclick', () => {
+        if (btn.dataset.moodName === 'targetRating') journalDraft.targetRating = null;
+        else if (btn.dataset.moodName === 'dayRating') journalDraft.dayRating = null;
+        render();
+      });
+    });
+
+    // date field drives the financial-target hint, so it needs a live re-render
+    const dateInput = root.querySelector('#journal-date');
+    if (dateInput) {
+      dateInput.addEventListener('change', () => {
+        journalDraft.date = dateInput.value || todayLocalStr();
+        render();
+      });
+    }
+
+    const targetHitInput = root.querySelector('#journal-target-hit');
+    if (targetHitInput) {
+      targetHitInput.addEventListener('change', () => {
+        journalDraft.targetHit = targetHitInput.checked;
+      });
+    }
+
+    // emotion / mistake tag pills
+    root.querySelectorAll('[data-tag-pill]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tagPill;
+        const group = btn.dataset.tagGroup;
+        const key = group === 'emotion' ? 'emotionTags' : 'mistakeTags';
+        const list = journalDraft[key] || (journalDraft[key] = []);
+        const idx = list.indexOf(tag);
+        if (idx === -1) list.push(tag); else list.splice(idx, 1);
+        render();
+      });
+    });
+
+    const saveBtn = root.querySelector('#journal-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        const date = root.querySelector('#journal-date').value || todayLocalStr();
+        const tagsRaw = root.querySelector('#journal-tags').value || '';
+        const tags = [...new Set(tagsRaw.split(',').map(t => t.trim()).filter(Boolean))];
+        const text = root.querySelector('#journal-text').value || '';
+        const adherence = {};
+        root.querySelectorAll('[data-adherence]').forEach(cb => {
+          adherence[cb.dataset.adherence] = cb.checked;
+        });
+        const fields = {
+          date, tags, text, mood: journalDraft.mood,
+          adherence, emotionTags: journalDraft.emotionTags || [], mistakeTags: journalDraft.mistakeTags || [],
+          dayRating: journalDraft.dayRating,
+          targetHit: !!journalDraft.targetHit, targetRating: journalDraft.targetRating
+        };
+        if (journalDraft.id) {
+          const existing = journalEntries.find(e => e.id === journalDraft.id);
+          if (existing) {
+            Object.assign(existing, fields, { updated_at: new Date().toISOString() });
+          }
+        } else {
+          journalEntries.push({
+            id: 'j_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            ...fields,
+            created_at: new Date().toISOString()
+          });
+        }
+        await saveJournal();
+        journalDraft = emptyDraft();
+        render();
+      });
+    }
+
+    const cancelBtn = root.querySelector('#journal-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        journalDraft = emptyDraft();
+        render();
+      });
+    }
+
+    root.querySelectorAll('[data-edit-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const entry = journalEntries.find(e => e.id === btn.dataset.editId);
+        if (entry) {
+          journalDraft = {
+            id: entry.id, date: entry.date, mood: entry.mood, tags: entry.tags || [], text: entry.text || '',
+            adherence: { ...(entry.adherence || {}) },
+            emotionTags: [...(entry.emotionTags || [])],
+            mistakeTags: [...(entry.mistakeTags || [])],
+            dayRating: entry.dayRating,
+            targetHit: !!entry.targetHit, targetRating: entry.targetRating
+          };
+          confirmDeleteId = null;
+          render();
+          const formEl = root.querySelector('.journal-form');
+          if (formEl && typeof formEl.scrollIntoView === 'function') {
+            formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
+
+    root.querySelectorAll('[data-delete-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.deleteId;
+        if (confirmDeleteId === id) {
+          journalEntries = journalEntries.filter(e => e.id !== id);
+          confirmDeleteId = null;
+          await saveJournal();
+          render();
+        } else {
+          confirmDeleteId = id;
+          render();
+        }
+      });
+    });
+
+    const jApply = root.querySelector('#journal-apply');
+    const jClear = root.querySelector('#journal-clear');
+    if (jApply) {
+      jApply.addEventListener('click', () => {
+        journalFrom = root.querySelector('#journal-from').value || '';
+        journalTo = root.querySelector('#journal-to').value || '';
+        journalTagFilter = root.querySelector('#journal-tag-filter').value || '';
+        journalMistakeFilter = root.querySelector('#journal-mistake-filter').value || '';
+        journalRulesBrokenOnly = root.querySelector('#journal-rules-broken').checked;
+        render();
+      });
+    }
+    if (jClear) {
+      jClear.addEventListener('click', () => {
+        journalFrom = ''; journalTo = ''; journalTagFilter = ''; journalMistakeFilter = ''; journalRulesBrokenOnly = false;
+        render();
+      });
+    }
+  }
+
+  /* ---------- board ---------- */
+
+  function computeBoardStats() {
+    const days = boardDays();
+    const today = todayLocalStr();
+    const counts = { g: 0, y: 0, r: 0, b: 0 };
+    let marked = 0;
+    let elapsed = 0;
+    let lastRed = null;
+    let longest = 0, running = 0;
+
+    for (const d of days) {
+      if (d <= today) elapsed++;
+      const m = boardMarks[d];
+      if (!m) { running = 0; continue; }
+      marked++;
+      counts[m]++;
+      if (m === 'b') continue; // sitting out neither extends nor breaks a streak
+      if (m === 'g') {
+        running++;
+        if (running > longest) longest = running;
+      } else {
+        running = 0;
+        if (m === 'r') lastRed = d;
+      }
+    }
+
+    // Current streak: walk back from the most recent marked day. An unmarked day
+    // breaks it, so the number never flatters a board with gaps in it. Days marked
+    // "didn't trade" are stepped over.
+    let current = 0;
+    let started = false;
+    for (let i = days.length - 1; i >= 0; i--) {
+      const m = boardMarks[days[i]];
+      if (!started) {
+        if (!m) continue;
+        started = true;
+      }
+      if (m === 'b') continue;
+      if (m === 'g') current++;
+      else break;
+    }
+
+    const traded = counts.g + counts.y + counts.r;
+    return {
+      total: days.length, elapsed, marked, traded, counts, lastRed,
+      currentStreak: current,
+      longestStreak: longest,
+      unmarkedElapsed: Math.max(elapsed - marked, 0),
+      discipline: traded ? (counts.g / traded) * 100 : null
+    };
+  }
+
+  function renderBoardStats() {
+    const s = computeBoardStats();
+    const ticks = Array.from({length: 9}).map(() => '<div></div>').join('');
+    const discCls = s.discipline == null ? 'neutral' : (s.discipline >= 80 ? 'positive' : (s.discipline < 50 ? 'negative' : 'neutral'));
+    return `
+      <div class="stat-row" style="grid-template-columns: repeat(6, 1fr);">
+        ${statCard(ticks, 'Elapsed', s.elapsed, 'neutral', `${s.total - s.elapsed} of ${s.total} still ahead`)}
+        ${statCard(ticks, 'Marked', s.marked, 'neutral', `${s.unmarkedElapsed} elapsed day${s.unmarkedElapsed === 1 ? '' : 's'} blank`)}
+        ${statCard(ticks, 'Traded', s.traded, 'neutral', `${s.counts.b} day${s.counts.b === 1 ? '' : 's'} sat out`)}
+        ${statCard(ticks, 'Discipline', s.discipline == null ? '—' : `${s.discipline.toFixed(0)}%`, discCls, `${s.counts.g} green of ${s.traded} traded`)}
+        ${statCard(ticks, 'Current streak', s.currentStreak, s.currentStreak > 0 ? 'positive' : 'neutral', 'consecutive green')}
+        ${statCard(ticks, 'Longest streak', s.longestStreak, 'neutral', s.lastRed ? `last red ${s.lastRed}` : 'no red days yet')}
+      </div>
+    `;
+  }
+
+  function renderBoardBreakdown() {
+    const rows = boardBands().map(band => {
+      const c = { g: 0, y: 0, r: 0, b: 0 };
+      let marked = 0;
+      for (const d of band.days) {
+        const m = boardMarks[d];
+        if (!m) continue;
+        marked++;
+        c[m]++;
+      }
+      const pct = k => (marked ? (c[k] / marked) * 100 : 0);
+      const traded = c.g + c.y + c.r;
+      const disc = traded ? (c.g / traded) * 100 : null;
+      return `
+        <div class="bar-row">
+          <div class="bar-label">Year ${band.index}</div>
+          <div class="bar-track">
+            ${marked ? `<div class="board-stack">
+              <div class="seg g" style="width:${pct('g')}%"></div>
+              <div class="seg y" style="width:${pct('y')}%"></div>
+              <div class="seg r" style="width:${pct('r')}%"></div>
+              <div class="seg b" style="width:${pct('b')}%"></div>
+            </div>` : ''}
+          </div>
+          <div class="bar-value ${disc == null ? '' : (disc >= 80 ? 'pos' : (disc < 50 ? 'neg' : ''))}">${disc == null ? '—' : disc.toFixed(0) + '%'}</div>
+          <div class="bar-meta">${marked}/${band.days.length} marked · ${c.b} sat out</div>
+        </div>
+      `;
+    }).join('');
+    return `<div class="bar-group">${rows}</div>`;
+  }
+
+  function renderBoardGrid() {
+    const today = todayLocalStr();
+    let n = 0;
+    let prevMonth = null; // 'YYYY-MM' of the previous cell, so each month gets exactly one tick
+    return boardBands().map(band => {
+      const marked = band.days.filter(d => boardMarks[d]).length;
+      const cells = band.days.map(iso => {
+        n++;
+        const dt = utcFromISO(iso);
+        const mo = dt.getUTCMonth();
+        const monthKey = iso.slice(0, 7);
+        const firstOfMonth = monthKey !== prevMonth;
+        prevMonth = monthKey;
+        const cls = ['board-cell'];
+        if (firstOfMonth) cls.push(mo % 3 === 0 ? 'quarter-start' : 'month-start');
+        if (iso > today) cls.push('future');
+        if (iso === today) cls.push('today');
+        if (iso === boardFlashDate) cls.push('flash');
+        if (boardComments[iso]) cls.push('has-comment');
+        const mark = boardMarks[iso];
+        return `<button type="button" class="${cls.join(' ')}" data-d="${iso}" data-n="${n}"${mark ? ` data-mark="${mark}"` : ''} tabindex="-1"></button>`;
+      }).join('');
+      return `
+        <div class="board-band">
+          <div class="board-band-header">
+            <div class="board-band-title">YEAR ${band.index}</div>
+            <div class="board-band-range">${band.label.toUpperCase()}</div>
+            <div class="board-band-meta">${marked} / ${band.days.length} marked</div>
+          </div>
+          <div class="board-grid">${cells}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderBoardCommentInner() {
+    if (!boardFocusedDate) {
+      return `<span class="placeholder">CLICK OR FOCUS A DAY ABOVE TO ADD A COMMENT</span>`;
+    }
+    const text = boardComments[boardFocusedDate] || '';
+    return `
+      <label class="board-comment-label">COMMENT — ${fmtBoardDate(boardFocusedDate)}</label>
+      <textarea id="board-comment-text" placeholder="What happened this day?">${text.replace(/</g, '&lt;')}</textarea>
+    `;
+  }
+
+  function renderBoardTab() {
+    const days = boardDays();
+    const density = (boardPrefs && boardPrefs.density) || 'm';
+    const closures = (boardPrefs && boardPrefs.closures) || [];
+
+    const densityBtn = (k, label) => `<button class="filter-btn ${density === k ? '' : 'ghost'}" data-density="${k}">${label}</button>`;
+
+    return `
+      <div class="board dense-${density}">
+        <div class="filter-bar">
+          <div class="board-legend">
+            <span class="leg"><span class="swatch g"></span>FOLLOWED MY PLAN</span>
+            <span class="leg"><span class="swatch y"></span>MINOR DEVIATION</span>
+            <span class="leg"><span class="swatch r"></span>BROKE MY RULES</span>
+            <span class="leg"><span class="swatch b"></span>DIDN'T TRADE</span>
+            <span class="leg"><span class="swatch n"></span>UNMARKED</span>
+          </div>
+          <div class="filter-count">${days.length} trading days</div>
+        </div>
+
+        <div class="filter-bar" style="margin-top:-8px;">
+          <label>JUMP TO <input type="date" id="board-jump" min="${BOARD_START}" max="${BOARD_END}"></label>
+          <button class="filter-btn" id="board-today">Today</button>
+          <label style="margin-left:8px;">SIZE</label>
+          ${densityBtn('s', 'S')}${densityBtn('m', 'M')}${densityBtn('l', 'L')}
+          <div class="filter-count">click cycles green → yellow → red → black → blank · shift-click or right-click clears · arrows + G/Y/R/B from the keyboard</div>
+        </div>
+
+        <div class="board-readout" id="board-readout">
+          <span class="placeholder">HOVER A DAY TO READ IT</span>
+        </div>
+
+        <div class="board-comment" id="board-comment">${renderBoardCommentInner()}</div>
+
+        <div id="board-stats">${renderBoardStats()}</div>
+
+        <div id="board-canvas">${renderBoardGrid()}</div>
+
+        <div class="section-label" style="margin-top:26px;">BY TRADING YEAR <span class="section-hint">— bar is the split of marked days; the percentage is green as a share of days actually traded, so sitting out never moves it</span></div>
+        ${renderBoardBreakdown()}
+
+        <div class="footnote" style="margin-top:20px;">
+          Holidays are derived from the exchange's own rules — weekends, New Year's Day, Martin Luther King Jr. Day,
+          Washington's Birthday, Good Friday, Memorial Day, Juneteenth, Independence Day, Labor Day, Thanksgiving and
+          Christmas, each observed on the preceding Friday when it falls on a Saturday and the following Monday when it
+          falls on a Sunday. Unscheduled closures can't be predicted five years out: shift-right-click a square to drop it
+          from the board if the exchange turns out to be shut that day.
+          ${closures.length ? `<br>Removed as non-trading: <span class="mono">${closures.join(', ')}</span> — <button class="mini-btn" id="board-restore-closures">restore all</button>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function wireBoardTab() {
+    const canvas = root.querySelector('#board-canvas');
+    if (!canvas) return;
+    const readout = root.querySelector('#board-readout');
+    const statsEl = root.querySelector('#board-stats');
+    const commentEl = root.querySelector('#board-comment');
+    const days = boardDays();
+
+    function wireCommentTextarea() {
+      const ta = root.querySelector('#board-comment-text');
+      if (!ta) return;
+      ta.addEventListener('input', () => {
+        const iso = boardFocusedDate;
+        const val = ta.value;
+        if (val.trim()) boardComments[iso] = val; else delete boardComments[iso];
+        saveBoardComments();
+        const cellEl = canvas.querySelector(`.board-cell[data-d="${iso}"]`);
+        if (cellEl) cellEl.classList.toggle('has-comment', !!val.trim());
+      });
+    }
+
+    function refreshComment() {
+      if (commentEl) commentEl.innerHTML = renderBoardCommentInner();
+      wireCommentTextarea();
+    }
+    refreshComment();
+
+    // Only the stat row is re-rendered on a mark — rebuilding all 1255 cells
+    // through render() would throw away scroll position and focus on every click.
+    function refreshStats() {
+      if (statsEl) statsEl.innerHTML = renderBoardStats();
+      const band = canvas.querySelectorAll('.board-band');
+      boardBands().forEach((b, i) => {
+        const meta = band[i] && band[i].querySelector('.board-band-meta');
+        if (meta) meta.textContent = `${b.days.filter(d => boardMarks[d]).length} / ${b.days.length} marked`;
+      });
+    }
+
+    function describe(el) {
+      const iso = el.dataset.d;
+      const mark = el.dataset.mark;
+      return `
+        <span class="dot ${mark || ''}"></span>
+        <span>${fmtBoardDate(iso)}</span>
+        <span class="sep">·</span>
+        <span class="muted">day ${el.dataset.n} of ${days.length}</span>
+        <span class="sep">·</span>
+        <span>${mark ? BOARD_LABELS[mark] : 'unmarked'}</span>
+      `;
+    }
+
+    function setMark(el, mark) {
+      const iso = el.dataset.d;
+      if (mark) {
+        boardMarks[iso] = mark;
+        el.dataset.mark = mark;
+      } else {
+        delete boardMarks[iso];
+        delete el.dataset.mark;
+      }
+      saveBoard();
+      refreshStats();
+      if (readout) readout.innerHTML = describe(el);
+    }
+
+    function cycle(el) {
+      const at = BOARD_CYCLE.indexOf(el.dataset.mark || '');
+      setMark(el, BOARD_CYCLE[at + 1] || '');
+    }
+
+    let cursor = null;
+    function focusCell(el) {
+      if (!el) return;
+      if (cursor) cursor.tabIndex = -1;
+      cursor = el;
+      el.tabIndex = 0;
+      el.focus({ preventScroll: false });
+      if (readout) readout.innerHTML = describe(el);
+      if (boardFocusedDate !== el.dataset.d) {
+        boardFocusedDate = el.dataset.d;
+        refreshComment();
+      }
+    }
+
+    canvas.addEventListener('mouseover', e => {
+      const el = e.target.closest('.board-cell');
+      if (!el || !readout) return;
+      if (!el.title) el.title = `${fmtBoardDate(el.dataset.d)} · day ${el.dataset.n} of ${days.length}`;
+      readout.innerHTML = describe(el);
+    });
+
+    canvas.addEventListener('click', e => {
+      const el = e.target.closest('.board-cell');
+      if (!el) return;
+      focusCell(el);
+      if (e.shiftKey) setMark(el, '');
+      else cycle(el);
+    });
+
+    canvas.addEventListener('contextmenu', e => {
+      const el = e.target.closest('.board-cell');
+      if (!el) return;
+      e.preventDefault();
+      focusCell(el);
+      if (e.shiftKey) {
+        // Drop the day from the board entirely — an unscheduled exchange closure.
+        const iso = el.dataset.d;
+        boardPrefs.closures = [...new Set([...(boardPrefs.closures || []), iso])].sort();
+        delete boardMarks[iso];
+        boardDaysCache = null;
+        saveBoard();
+        saveBoardPrefs();
+        status = { msg: `${iso} removed from the board as a non-trading day.`, error: false };
+        render();
+        return;
+      }
+      setMark(el, '');
+    });
+
+    canvas.addEventListener('keydown', e => {
+      const el = e.target.closest('.board-cell');
+      if (!el) return;
+      const key = e.key.toLowerCase();
+      if (key === 'g' || key === 'y' || key === 'r' || key === 'b') { e.preventDefault(); setMark(el, key); return; }
+      if (key === 'n') { e.preventDefault(); setMark(el, 'b'); return; } // n for "no trade"
+      if (key === '0' || key === 'delete' || key === 'backspace') { e.preventDefault(); setMark(el, ''); return; }
+      if (key === ' ' || key === 'enter') { e.preventDefault(); cycle(el); return; }
+
+      const all = [...canvas.querySelectorAll('.board-cell')];
+      const at = all.indexOf(el);
+      const perRow = getComputedStyle(el.parentElement).gridTemplateColumns.split(' ').length;
+      let next = null;
+      if (e.key === 'ArrowRight') next = all[at + 1];
+      else if (e.key === 'ArrowLeft') next = all[at - 1];
+      else if (e.key === 'ArrowDown') next = all[at + perRow] || all[all.length - 1];
+      else if (e.key === 'ArrowUp') next = all[at - perRow] || all[0];
+      else if (e.key === 'Home') next = all[0];
+      else if (e.key === 'End') next = all[all.length - 1];
+      if (next) { e.preventDefault(); focusCell(next); }
+    });
+
+    function jumpTo(iso) {
+      if (!iso) return;
+      // Land on the first trading day on or after the requested date.
+      const target = days.find(d => d >= iso) || days[days.length - 1];
+      const el = canvas.querySelector(`.board-cell[data-d="${target}"]`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 1900);
+      focusCell(el);
+    }
+
+    const jump = root.querySelector('#board-jump');
+    if (jump) jump.addEventListener('change', () => jumpTo(jump.value));
+    const todayBtn = root.querySelector('#board-today');
+    if (todayBtn) todayBtn.addEventListener('click', () => jumpTo(todayLocalStr()));
+
+    root.querySelectorAll('[data-density]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        boardPrefs.density = btn.dataset.density;
+        saveBoardPrefs();
+        render();
+      });
+    });
+
+    const restore = root.querySelector('#board-restore-closures');
+    if (restore) {
+      restore.addEventListener('click', () => {
+        boardPrefs.closures = [];
+        boardDaysCache = null;
+        saveBoardPrefs();
+        status = { msg: 'Removed days restored to the board.', error: false };
+        render();
+      });
+    }
+
+    // Make one cell tab-reachable so the grid is a single stop in the tab order.
+    const start = canvas.querySelector(`.board-cell[data-d="${days.find(d => d >= todayLocalStr()) || days[0]}"]`) || canvas.querySelector('.board-cell');
+    if (start) { start.tabIndex = 0; cursor = start; }
+
+    if (boardFlashDate) {
+      const el = canvas.querySelector(`.board-cell[data-d="${boardFlashDate}"]`);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+      boardFlashDate = null;
+    }
+  }
+
+  function renderDataTab() {
+    const ticks = Array.from({length: 9}).map(() => '<div></div>').join('');
+    let dateRange = '—';
+    if (trades.length) {
+      const dates = trades.map(t => tradeLocalDateStr(t)).sort();
+      dateRange = dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} → ${dates[dates.length - 1]}`;
+    }
+    const rulesConfigured = !!(rules && (
+      rules.dailyLossLimit != null || rules.maxTradesPerDay != null || rules.maxSizePerTrade != null ||
+      rules.maxConsecutiveLosses != null || rules.sessionsToTrade || rules.maxTimeBeforeBreak != null || rules.notes
+    ));
+
+    const summaryHtml = `
+      <div class="stat-row" style="grid-template-columns: repeat(5, 1fr);">
+        ${statCard(ticks, 'Trades stored', trades.length, 'neutral')}
+        ${statCard(ticks, 'Date range', dateRange, 'neutral')}
+        ${statCard(ticks, 'Journal entries', journalEntries.length, 'neutral')}
+        ${statCard(ticks, 'Board days marked', Object.keys(boardMarks).length, 'neutral')}
+        ${statCard(ticks, 'Rules configured', rulesConfigured ? 'Yes' : 'No', rulesConfigured ? 'positive' : 'neutral')}
+      </div>
+    `;
+
+    const exportHtml = `
+      <div class="rules-panel">
+        <div class="section-label">EXPORT BACKUP <span class="section-hint">— every trade, journal entry and rule setting, as one JSON file</span></div>
+        <p style="font-size:12.5px; color:var(--muted); margin: 0 0 14px 0; line-height:1.6;">
+          Downloads <span class="mono">trim-backup-${todayLocalStr()}.json</span>. Keep it somewhere safe — it's the only way to move this data to another browser or recover it if storage is cleared.
+        </p>
+        <button class="upload-btn" id="export-btn">Export backup</button>
+        ${exportFallback ? `
+          <div class="section-label" style="margin-top:18px;">COULDN'T TRIGGER A DOWNLOAD <span class="section-hint">— copy the text below and save it as a .json file yourself</span></div>
+          <textarea readonly style="min-height:140px;" onclick="this.select()">${exportFallback.replace(/</g, '&lt;')}</textarea>
+        ` : ''}
+      </div>
+    `;
+
+    const importHtml = `
+      <div class="rules-panel" style="margin-top:20px;">
+        <div class="section-label">IMPORT BACKUP</div>
+        <div class="upload-zone" id="backup-zone">
+          <div class="icon-line">&#9650; DROP BACKUP JSON OR SELECT FILE</div>
+          <div class="sub">Trades and journal entries are matched by id — existing ones are kept, only new ones are added. Board marks fill empty days only. Rules are replaced by the file's.</div>
+          <button class="upload-btn" id="backup-btn">Select backup file</button>
+          <input type="file" id="backup-file-input" accept=".json" style="display:none;">
+          ${status.msg ? `<div class="upload-status ${status.error ? 'error' : ''}">${status.msg}</div>` : ''}
+        </div>
+        ${importSummary ? `
+          <div class="callout ${importSummary.added || importSummary.journalAdded || importSummary.boardAdded || importSummary.rulesReplaced ? 'positive' : 'neutral'}">
+            Trades: <strong>${importSummary.added}</strong> added, ${importSummary.skipped} duplicate${importSummary.skipped === 1 ? '' : 's'} skipped.
+            Journal: <strong>${importSummary.journalAdded}</strong> added, ${importSummary.journalSkipped} duplicate${importSummary.journalSkipped === 1 ? '' : 's'} skipped.
+            Board: <strong>${importSummary.boardAdded || 0}</strong> day${(importSummary.boardAdded || 0) === 1 ? '' : 's'} added, ${importSummary.boardSkipped || 0} already marked.
+            Comments: <strong>${importSummary.commentsAdded || 0}</strong> added, ${importSummary.commentsSkipped || 0} already had one.
+            ${importSummary.rulesReplaced ? ' Rules replaced.' : ''}
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    const rangeTradeCount = tradesInClearRange().length;
+    const rangeJournalCount = journalInClearRange().length;
+    const rangeEmpty = !clearFrom && !clearTo;
+    const rangeArmed = clearArmed === 'range';
+    const rangeLabel = rangeArmed
+      ? `Confirm: delete ${rangeTradeCount} trade${rangeTradeCount === 1 ? '' : 's'}, ${rangeJournalCount} entr${rangeJournalCount === 1 ? 'y' : 'ies'}`
+      : 'Clear range';
+
+    const clearBtn = (action, label, count) => {
+      const armed = clearArmed === action;
+      const text = armed ? `Confirm: delete ${count}` : label;
+      return `<button class="mini-btn danger" data-clear-action="${action}">${text}</button>`;
+    };
+
+    const clearHtml = `
+      <div class="rules-panel" style="margin-top:20px;">
+        <div class="section-label">CLEAR DATA</div>
+        <div class="callout negative">This cannot be undone. Export a backup above first if you're not sure.</div>
+
+        <div class="journal-form-header" style="margin-top:18px;">CLEAR BY DATE RANGE</div>
+        <div class="filter-bar">
+          <label>FROM <input type="date" id="clear-from" value="${clearFrom}"></label>
+          <label>TO <input type="date" id="clear-to" value="${clearTo}"></label>
+          <div class="filter-count">${rangeTradeCount} trade${rangeTradeCount === 1 ? '' : 's'}, ${rangeJournalCount} entr${rangeJournalCount === 1 ? 'y' : 'ies'} in range</div>
+          <button class="mini-btn danger" id="clear-range-btn" ${rangeEmpty ? 'disabled' : ''}>${rangeLabel}</button>
+        </div>
+        ${rangeEmpty ? `<div class="section-hint" style="margin-top:6px;">Set a FROM and/or TO date to enable this — an empty range clears nothing here (use the buttons below to clear everything).</div>` : ''}
+
+        <div class="journal-form-header" style="margin-top:22px;">CLEAR EVERYTHING</div>
+        <div class="journal-form-actions" style="flex-wrap:wrap; gap:10px;">
+          ${clearBtn('trades', 'Clear all trades', trades.length)}
+          ${clearBtn('journal', 'Clear all journal entries', journalEntries.length)}
+          ${clearBtn('rules', 'Reset rules to defaults', 1)}
+          ${clearBtn('board', 'Clear all board marks & comments', Object.keys(boardMarks).length + Object.keys(boardComments).length)}
+          ${clearBtn('all', 'Erase all TRIM data', trades.length + journalEntries.length + Object.keys(boardMarks).length)}
+        </div>
+      </div>
+    `;
+
+    return summaryHtml + exportHtml + importHtml + clearHtml;
+  }
+
+  function wireDataTab() {
+    const exportBtn = root.querySelector('#export-btn');
+    if (exportBtn) exportBtn.addEventListener('click', exportData);
+
+    const zone = root.querySelector('#backup-zone');
+    const fileInput = root.querySelector('#backup-file-input');
+    const backupBtn = root.querySelector('#backup-btn');
+    if (zone) {
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleBackupFile(e.dataTransfer.files[0]);
+      });
+      backupBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleBackupFile(e.target.files[0]);
+        e.target.value = '';
+      });
+    }
+
+    const clearFromInput = root.querySelector('#clear-from');
+    const clearToInput = root.querySelector('#clear-to');
+    if (clearFromInput) {
+      clearFromInput.addEventListener('input', () => {
+        clearFrom = clearFromInput.value || '';
+        clearArmed = null;
+        render();
+      });
+    }
+    if (clearToInput) {
+      clearToInput.addEventListener('input', () => {
+        clearTo = clearToInput.value || '';
+        clearArmed = null;
+        render();
+      });
+    }
+
+    const clearRangeBtn = root.querySelector('#clear-range-btn');
+    if (clearRangeBtn) {
+      clearRangeBtn.addEventListener('click', () => {
+        if (clearArmed === 'range') { clearByRange(); }
+        else { clearArmed = 'range'; render(); }
+      });
+    }
+
+    root.querySelectorAll('[data-clear-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.clearAction;
+        if (clearArmed !== action) { clearArmed = action; render(); return; }
+        if (action === 'trades') clearAllTrades();
+        else if (action === 'journal') clearAllJournal();
+        else if (action === 'rules') resetRules();
+        else if (action === 'board') clearBoard();
+        else if (action === 'all') clearEverything();
+      });
+    });
+  }
+
+  function renderRulesTab() {
+    const r = rules || defaultRules();
+    const updated = r.updated_at ? new Date(r.updated_at).toLocaleString('sv-SE', { timeZone: 'Europe/Stockholm' }) : 'never';
+    return `
+      <div class="rules-panel">
+        <div class="section-label">ENFORCEABLE LIMITS <span class="section-hint">— checked against your trades on the Dashboard as a passive flag</span></div>
+        <div class="rules-grid">
+          <label class="rules-field">
+            <span>Daily loss limit ($)</span>
+            <input type="number" id="rule-dailyLossLimit" min="0" step="1" placeholder="e.g. 500" value="${r.dailyLossLimit ?? ''}">
+          </label>
+          <label class="rules-field">
+            <span>Max trades per day</span>
+            <input type="number" id="rule-maxTradesPerDay" min="0" step="1" placeholder="e.g. 5" value="${r.maxTradesPerDay ?? ''}">
+          </label>
+          <label class="rules-field">
+            <span>Max size per trade (contracts)</span>
+            <input type="number" id="rule-maxSizePerTrade" min="0" step="1" placeholder="e.g. 2" value="${r.maxSizePerTrade ?? ''}">
+          </label>
+          <label class="rules-field">
+            <span>Max consecutive losses</span>
+            <input type="number" id="rule-maxConsecutiveLosses" min="0" step="1" placeholder="e.g. 3" value="${r.maxConsecutiveLosses ?? ''}">
+          </label>
+          <label class="rules-field">
+            <span>Sessions to trade</span>
+            <input type="text" id="rule-sessionsToTrade" placeholder="e.g. London, NY Open" value="${r.sessionsToTrade || ''}">
+          </label>
+          <label class="rules-field">
+            <span>Max time to trade before a break (min)</span>
+            <input type="number" id="rule-maxTimeBeforeBreak" min="0" step="1" placeholder="e.g. 90 (then 15 min break)" value="${r.maxTimeBeforeBreak ?? ''}">
+          </label>
+        </div>
+
+        <div class="section-label">OTHER NOTES</div>
+        <textarea id="rule-notes" placeholder="Anything else worth writing down.">${r.notes || ''}</textarea>
+
+        <div class="journal-form-actions" style="margin-top: 4px;">
+          <button class="upload-btn" id="rules-save">Save rules</button>
+          <div class="rules-updated">Last updated: ${updated}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireRulesTab() {
+    const saveBtn = root.querySelector('#rules-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        const numOrNull = (id) => {
+          const v = root.querySelector(id).value;
+          return v === '' ? null : parseFloat(v);
+        };
+        rules = {
+          dailyLossLimit: numOrNull('#rule-dailyLossLimit'),
+          maxTradesPerDay: numOrNull('#rule-maxTradesPerDay'),
+          maxSizePerTrade: numOrNull('#rule-maxSizePerTrade'),
+          maxConsecutiveLosses: numOrNull('#rule-maxConsecutiveLosses'),
+          sessionsToTrade: root.querySelector('#rule-sessionsToTrade').value || '',
+          maxTimeBeforeBreak: numOrNull('#rule-maxTimeBeforeBreak'),
+          notes: root.querySelector('#rule-notes').value || '',
+          updated_at: new Date().toISOString()
+        };
+        await saveRules();
+        status = { msg: 'Rules saved.', error: false };
+        render();
+      });
+    }
+  }
+
+  function renderSoon(title, desc, phase) {
+    return `
+      <div class="soon">
+        <div class="gauge-face"><div class="gauge-needle"></div></div>
+        <h3>${title}</h3>
+        <p>${desc}</p>
+        <div class="phase">${phase}</div>
+      </div>
+    `;
+  }
+
+  function render() {
+    let bodyHtml = '';
+    if (loading) {
+      bodyHtml = `<div class="empty">Loading...</div>`;
+    } else if (activeTab === 'trades') {
+      bodyHtml = renderTrades();
+    } else if (activeTab === 'dashboard') {
+      bodyHtml = renderDashboardTab();
+    } else if (activeTab === 'journal') {
+      bodyHtml = renderJournalTab();
+    } else if (activeTab === 'board') {
+      bodyHtml = renderBoardTab();
+    } else if (activeTab === 'rules') {
+      bodyHtml = renderRulesTab();
+    } else if (activeTab === 'data') {
+      bodyHtml = renderDataTab();
+    }
+
+    root.innerHTML = `
+      <div class="header">
+        <div>
+          <img class="wordmark-logo" src="data:image/png;base64,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" alt="TRIM">
+          <div class="tagline">discipline instrumentation for traders</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button data-tab="rules" class="${activeTab === 'rules' ? 'active' : ''}">RULES</button>
+        <button data-tab="trades" class="${activeTab === 'trades' ? 'active' : ''}">TRADES</button>
+        <button data-tab="journal" class="${activeTab === 'journal' ? 'active' : ''}">JOURNAL</button>
+        <button data-tab="board" class="${activeTab === 'board' ? 'active' : ''}">DISCIPLINE BOARD</button>
+        <button data-tab="dashboard" class="${activeTab === 'dashboard' ? 'active' : ''}">DASHBOARD</button>
+        <button data-tab="data" class="${activeTab === 'data' ? 'active' : ''}">DATA</button>
+      </div>
+      <div class="body">${bodyHtml}</div>
+    `;
+
+    root.querySelectorAll('.nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTab = btn.dataset.tab;
+        status = { msg: '', error: false };
+        importSummary = null;
+        exportFallback = null;
+        clearArmed = null;
+        render();
+      });
+    });
+
+    const zone = root.querySelector('#upload-zone');
+    const fileInput = root.querySelector('#file-input');
+    const uploadBtn = root.querySelector('#upload-btn');
+    if (zone) {
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+      });
+      uploadBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+      });
+    }
+
+    root.querySelectorAll('th[data-sortkey]').forEach(th => {
+      th.addEventListener('click', () => setSort(th.dataset.sortkey));
+    });
+
+    const applyBtn = root.querySelector('#dash-apply');
+    const clearBtn = root.querySelector('#dash-clear');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', () => {
+        dashFrom = root.querySelector('#dash-from').value || '';
+        dashTo = root.querySelector('#dash-to').value || '';
+        render();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => { dashFrom = ''; dashTo = ''; render(); });
+    }
+
+    const tradesApplyBtn = root.querySelector('#trades-apply');
+    const tradesClearBtn = root.querySelector('#trades-clear');
+    if (tradesApplyBtn) {
+      tradesApplyBtn.addEventListener('click', () => {
+        tradesFrom = root.querySelector('#trades-from').value || '';
+        tradesTo = root.querySelector('#trades-to').value || '';
+        render();
+      });
+    }
+    if (tradesClearBtn) {
+      tradesClearBtn.addEventListener('click', () => { tradesFrom = ''; tradesTo = ''; render(); });
+    }
+
+    root.querySelectorAll('.mood-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const id = sel.dataset.tradeId;
+        const val = sel.value ? parseInt(sel.value, 10) : null;
+        const t = trades.find(x => x.id === id);
+        if (t) { t.mood = val; await saveTrades(); }
+      });
+    });
+
+    if (activeTab === 'journal') wireJournalTab();
+    if (activeTab === 'board') wireBoardTab();
+    if (activeTab === 'rules') wireRulesTab();
+    if (activeTab === 'data') wireDataTab();
+  }
+
+  loadTrades();
+})();
+</script>
