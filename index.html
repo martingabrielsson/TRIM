@@ -794,6 +794,33 @@
   }
   #trim-root .journal-entry-text .empty-text { color: var(--muted); font-style: italic; }
 
+  #trim-root .affirm-group { margin-bottom: 26px; }
+  #trim-root .affirm-group:last-child { margin-bottom: 0; }
+  #trim-root .affirm-intro {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 6px 0 12px 0;
+  }
+  #trim-root .affirm-intro a { color: var(--amber-deep); }
+  #trim-root .affirm-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #trim-root .affirm-item {
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
   /* ---- Dashboard: section labels ---- */
   #trim-root .section-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -2748,7 +2775,7 @@
           <button class="filter-btn" id="board-today">Today</button>
           <label style="margin-left:8px;">SIZE</label>
           ${densityBtn('s', 'S')}${densityBtn('m', 'M')}${densityBtn('l', 'L')}
-          <div class="filter-count">click cycles green → yellow → red → black → blank · shift-click or right-click clears · arrows + G/Y/R/B from the keyboard</div>
+          <div class="filter-count">click selects a day · double-click cycles green → yellow → red → black → blank · shift-double-click or right-click clears · arrows + G/Y/R/B from the keyboard</div>
         </div>
 
         <div class="board-readout" id="board-readout">
@@ -2868,6 +2895,14 @@
     });
 
     canvas.addEventListener('click', e => {
+      const el = e.target.closest('.board-cell');
+      if (!el) return;
+      // A single click only selects the day (readout + comment box) — it never
+      // changes its mark. Changing the mark by mouse needs a double-click.
+      focusCell(el);
+    });
+
+    canvas.addEventListener('dblclick', e => {
       const el = e.target.closest('.board-cell');
       if (!el) return;
       focusCell(el);
@@ -3124,6 +3159,60 @@
     });
   }
 
+  const AFFIRMATIONS = [
+    {
+      title: 'Probability mindset (Mark Douglas, Trading in the Zone)',
+      intro: 'his five truths boil down to: anything can happen, you don\'t need to know what\'s next to make money, wins and losses are randomly distributed across any edge, an edge is only a probability, and every moment is unique: <a href="https://enlightenedstocktrading.com/mark-douglas/" target="_blank" rel="noopener">Enlightened Stock Trading</a>',
+      items: [
+        "I don't need to be right on this trade. I need to be right over a hundred of them.",
+        'Anything can happen next. My job is to be prepared, not to predict.',
+        'This loss carries no information about the next trade.',
+        'My edge is a probability, not a promise.'
+      ]
+    },
+    {
+      title: 'Execution over outcome (Steenbarger, The Daily Trading Coach)',
+      items: [
+        'Today I am graded on execution, not on P&L.',
+        'A rule-perfect losing day is a good day.',
+        'A rule-breaking winning day is a bad day, and I will log it as one.',
+        'I take the trades on my list and I let the rest go by.'
+      ]
+    },
+    {
+      title: 'Your specific tilt pattern — late-session damage, fast re-entries, size creep after losses',
+      items: [
+        'After a loss, I step away from the keys before I touch them again.',
+        'My size is set before the session and does not change because of how I feel.',
+        'I do not need to win it back today. Tomorrow is also a trading day.',
+        'When I notice the urge to hurry, that is my signal to slow down.',
+        'The last hour is when I protect the day, not when I rescue it.',
+        'If I hit my daily stop, I am done. That decision was already made by a calmer version of me.'
+      ]
+    },
+    {
+      title: 'Patience and boredom',
+      items: [
+        'No setup is also a position.',
+        'I get paid for waiting, not for clicking.',
+        'Missing a trade costs me nothing. Forcing one costs me money.'
+      ]
+    }
+  ];
+
+  function renderAffirmationsTab() {
+    const groupsHtml = AFFIRMATIONS.map(g => `
+      <div class="affirm-group">
+        <div class="section-label">${g.title.replace(/</g, '&lt;')}</div>
+        ${g.intro ? `<div class="affirm-intro">${g.intro}</div>` : ''}
+        <ul class="affirm-list">
+          ${g.items.map(item => `<li class="affirm-item">${item.replace(/</g, '&lt;')}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('');
+    return `<div class="rules-panel">${groupsHtml}</div>`;
+  }
+
   function renderRulesTab() {
     const r = rules || defaultRules();
     const updated = r.updated_at ? new Date(r.updated_at).toLocaleString('sv-SE', { timeZone: 'Europe/Stockholm' }) : 'never';
@@ -3144,7 +3233,7 @@
             <input type="number" id="rule-maxSizePerTrade" min="0" step="1" placeholder="e.g. 2" value="${r.maxSizePerTrade ?? ''}">
           </label>
           <label class="rules-field">
-            <span>Max consecutive losses</span>
+            <span>Max consecutive losses - BEFORE 15 MINS BREAK</span>
             <input type="number" id="rule-maxConsecutiveLosses" min="0" step="1" placeholder="e.g. 3" value="${r.maxConsecutiveLosses ?? ''}">
           </label>
           <label class="rules-field">
@@ -3218,6 +3307,8 @@
       bodyHtml = renderBoardTab();
     } else if (activeTab === 'rules') {
       bodyHtml = renderRulesTab();
+    } else if (activeTab === 'affirmations') {
+      bodyHtml = renderAffirmationsTab();
     } else if (activeTab === 'data') {
       bodyHtml = renderDataTab();
     }
@@ -3231,6 +3322,7 @@
       </div>
       <div class="nav">
         <button data-tab="rules" class="${activeTab === 'rules' ? 'active' : ''}">RULES</button>
+        <button data-tab="affirmations" class="${activeTab === 'affirmations' ? 'active' : ''}">AFFIRMATIONS</button>
         <button data-tab="trades" class="${activeTab === 'trades' ? 'active' : ''}">TRADES</button>
         <button data-tab="journal" class="${activeTab === 'journal' ? 'active' : ''}">JOURNAL</button>
         <button data-tab="board" class="${activeTab === 'board' ? 'active' : ''}">DISCIPLINE BOARD</button>
