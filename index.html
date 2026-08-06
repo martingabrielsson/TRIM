@@ -180,6 +180,56 @@
   #trim-root .board-legend .swatch.b { background: var(--black); border-color: var(--black); }
   #trim-root .board-legend .swatch.n { background: var(--panel); }
 
+  /* ---- Discipline-board status shown on a journal entry (not inside .board, so colours are hardcoded here rather than relying on .board's local custom properties) ---- */
+  #trim-root .journal-board-legend { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+  #trim-root .journal-board-legend .leg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    opacity: 0.4;
+  }
+  #trim-root .journal-board-legend .leg.selected {
+    opacity: 1;
+    color: var(--ink);
+    font-weight: 700;
+    border-width: 2px;
+    border-style: solid;
+    background: var(--panel);
+  }
+  #trim-root .journal-board-legend .swatch {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    flex: none;
+  }
+  #trim-root .journal-board-legend .swatch.g { background: var(--positive); border-color: var(--positive); }
+  #trim-root .journal-board-legend .swatch.y { background: #e0a92e; border-color: #e0a92e; }
+  #trim-root .journal-board-legend .swatch.r { background: var(--negative); border-color: var(--negative); }
+  #trim-root .journal-board-legend .swatch.b { background: var(--ink); border-color: var(--ink); }
+  #trim-root .journal-board-legend .swatch.n { background: var(--panel); }
+  #trim-root .journal-board-legend .leg.selected .swatch { transform: scale(1.2); }
+  #trim-root .journal-board-legend .check { font-size: 11px; }
+
+  #trim-root .journal-entry-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+  }
+
   #trim-root .board-readout {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
@@ -1006,8 +1056,8 @@
   let loading = true;
   let dashFrom = '';
   let dashTo = '';
-  let tradesFrom = '';
-  let tradesTo = '';
+  let tradesFrom = todayLocalStr();
+  let tradesTo = todayLocalStr();
   let journalEntries = [];
   let journalFrom = '';
   let journalTo = '';
@@ -1015,8 +1065,13 @@
   let journalMistakeFilter = '';
   let journalRulesBrokenOnly = false;
   let journalDraft = null; // set when creating or editing an entry
+  let journalDetailId = null; // set when viewing a saved entry's read-only detail page
   let confirmDeleteId = null;
-  let rules = null;
+  let rules = null; // legacy global rules — kept only as the fallback for dates with no daily rules saved yet
+  let rulesByDate = {}; // sparse: { 'YYYY-MM-DD': { dailyLossLimit, maxTradesPerDay, ..., updated_at } }
+  let rulesDate = '';
+  let affirmationsByDate = {}; // sparse: { 'YYYY-MM-DD': { picks: [itemKey,...], updated_at } }
+  let affirmDate = '';
   let importSummary = null; // set after an import completes
   let exportFallback = null; // JSON text shown if a download can't be triggered
   let clearFrom = '';
@@ -1031,6 +1086,8 @@
   const STORAGE_KEY = 'trim:trades:all';
   const JOURNAL_KEY = 'trim:journal:entries';
   const RULES_KEY = 'trim:rules:config';
+  const RULES_BYDATE_KEY = 'trim:rules:byDate';
+  const AFFIRM_KEY = 'trim:affirmations:byDate';
   const BOARD_KEY = 'trim:board:marks';
   const BOARD_PREFS_KEY = 'trim:board:prefs';
   const BOARD_COMMENTS_KEY = 'trim:board:comments';
@@ -1071,13 +1128,13 @@
 
   function defaultRules() {
     return {
-      dailyLossLimit: 150,
-      maxTradesPerDay: 5,
-      maxSizePerTrade: 2,
-      maxConsecutiveLosses: 2,
-      sessionsToTrade: 'NY Open',
-      maxTimeBeforeBreak: 60,
-      notes: 'Opening 15-30 mins Rage Trade @ NY Open. No Trading from work laptop. Make sure to let go of work/family. Trading is a performance sport. Quick in/out market will crush you, stay greatful for what you can get today and leave.',
+      dailyLossLimit: null,
+      maxTradesPerDay: null,
+      maxSizePerTrade: null,
+      maxConsecutiveLosses: null,
+      sessionsToTrade: '',
+      maxTimeBeforeBreak: null,
+      notes: '',
       updated_at: null
     };
   }
@@ -1137,6 +1194,12 @@
     return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' });
   }
 
+  function yesterdayLocalStr() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' });
+  }
+
   /* ---------- Nasdaq trading calendar ----------
      All arithmetic is done in UTC so daylight-saving shifts can never move a date. */
 
@@ -1148,6 +1211,34 @@
   // 'b' is a deliberate judgement, not a gap: it sits outside the discipline
   // percentage and is stepped over by streaks rather than breaking them.
   const BOARD_TRADED = ['g', 'y', 'r'];
+  const BOARD_SWATCH_COLOR = { g: 'var(--positive)', y: '#e0a92e', r: 'var(--negative)', b: 'var(--ink)' };
+  const BOARD_STATUS_ITEMS = [
+    ['g', 'FOLLOWED MY PLAN'], ['y', 'MINOR DEVIATION'], ['r', 'BROKE MY RULES'],
+    ['b', "DIDN'T TRADE"], ['n', 'UNMARKED']
+  ];
+
+  // Full legend row for a journal entry's date, with the day's actual board
+  // mark (or "unmarked") visually singled out from the other four options.
+  function renderBoardStatusLegend(dateStr) {
+    const mark = boardMarks[dateStr] || 'n';
+    return `
+      <div class="journal-board-legend">
+        ${BOARD_STATUS_ITEMS.map(([key, label]) => {
+          const selected = key === mark;
+          const color = BOARD_SWATCH_COLOR[key];
+          return `<span class="leg ${selected ? 'selected' : ''}"${selected && color ? ` style="border-color:${color};"` : ''}>${selected ? '<span class="check">&#10003;</span>' : ''}<span class="swatch ${key}"></span>${label}</span>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // Compact single badge for the journal entry card list.
+  function renderBoardStatusBadge(dateStr) {
+    const mark = boardMarks[dateStr] || 'n';
+    const label = mark === 'n' ? 'UNMARKED' : BOARD_STATUS_ITEMS.find(([k]) => k === mark)[1];
+    const color = BOARD_SWATCH_COLOR[mark];
+    return `<span class="journal-entry-badge"${color ? ` style="border-color:${color}; color:${color};"` : ''}><span class="swatch ${mark}" style="width:9px;height:9px;border-radius:2px;${color ? `background:${color};border-color:${color};` : ''}"></span>${label}</span>`;
+  }
   const WD_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MO_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -1292,6 +1383,10 @@
     trades = loadJSON(STORAGE_KEY, []);
     journalEntries = loadJSON(JOURNAL_KEY, []).map(normalizeEntry);
     rules = { ...defaultRules(), ...loadJSON(RULES_KEY, {}) };
+    rulesByDate = loadJSON(RULES_BYDATE_KEY, {}) || {};
+    rulesDate = todayLocalStr();
+    affirmationsByDate = loadJSON(AFFIRM_KEY, {}) || {};
+    affirmDate = todayLocalStr();
     boardMarks = loadJSON(BOARD_KEY, {}) || {};
     boardComments = loadJSON(BOARD_COMMENTS_KEY, {}) || {};
     boardPrefs = { ...defaultBoardPrefs(), ...loadJSON(BOARD_PREFS_KEY, {}) };
@@ -1318,6 +1413,28 @@
     }
   }
 
+  function saveRulesByDate() {
+    if (!saveJSON(RULES_BYDATE_KEY, rulesByDate)) {
+      status = { msg: 'Could not save rules to storage. Data may not persist.', error: true };
+    }
+  }
+
+  // Rules for a given day: that day's saved values if any, else the most
+  // recently saved day at or before it (rules stay in effect until changed),
+  // else the legacy global rules as a last-resort default.
+  function rulesForDate(dateStr) {
+    if (rulesByDate[dateStr]) return { ...defaultRules(), ...rulesByDate[dateStr] };
+    const priorDates = Object.keys(rulesByDate).filter(d => d <= dateStr).sort();
+    if (priorDates.length) return { ...defaultRules(), ...rulesByDate[priorDates[priorDates.length - 1]] };
+    return rules || defaultRules();
+  }
+
+  function saveAffirmations() {
+    if (!saveJSON(AFFIRM_KEY, affirmationsByDate)) {
+      status = { msg: 'Could not save affirmations to storage. Data may not persist.', error: true };
+    }
+  }
+
   /* ---------- export / import ---------- */
 
   function buildBackupPayload() {
@@ -1328,6 +1445,8 @@
       trades,
       journalEntries,
       rules: rules || defaultRules(),
+      rulesByDate,
+      affirmationsByDate,
       boardMarks,
       boardComments,
       boardPrefs: boardPrefs || defaultBoardPrefs()
@@ -1374,7 +1493,7 @@
         render();
         return;
       }
-      if (!data || typeof data !== 'object' || (!data.trades && !data.journalEntries && !data.rules && !data.boardMarks)) {
+      if (!data || typeof data !== 'object' || (!data.trades && !data.journalEntries && !data.rules && !data.rulesByDate && !data.affirmationsByDate && !data.boardMarks)) {
         status = { msg: 'That file does not look like a TRIM backup.', error: true };
         importSummary = null;
         render();
@@ -1420,6 +1539,29 @@
         rulesReplaced = true;
       }
 
+      // Daily rules and affirmations: a day already saved here wins, same
+      // gap-fill rule as board marks below.
+      let rulesDaysAdded = 0, rulesDaysSkipped = 0;
+      if (data.rulesByDate && typeof data.rulesByDate === 'object') {
+        for (const [date, dayRules] of Object.entries(data.rulesByDate)) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !dayRules || typeof dayRules !== 'object') continue;
+          if (rulesByDate[date]) { rulesDaysSkipped++; continue; }
+          rulesByDate[date] = dayRules;
+          rulesDaysAdded++;
+        }
+        await saveRulesByDate();
+      }
+      let affirmDaysAdded = 0, affirmDaysSkipped = 0;
+      if (data.affirmationsByDate && typeof data.affirmationsByDate === 'object') {
+        for (const [date, dayAffirm] of Object.entries(data.affirmationsByDate)) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !dayAffirm || !Array.isArray(dayAffirm.picks)) continue;
+          if (affirmationsByDate[date]) { affirmDaysSkipped++; continue; }
+          affirmationsByDate[date] = dayAffirm;
+          affirmDaysAdded++;
+        }
+        await saveAffirmations();
+      }
+
       // Board marks: a day already marked here wins, so importing a backup can
       // fill gaps without silently overwriting judgements made since the export.
       let boardAdded = 0, boardSkipped = 0;
@@ -1450,7 +1592,7 @@
         saveBoardPrefs();
       }
 
-      importSummary = { added, skipped, journalAdded, journalSkipped, rulesReplaced, boardAdded, boardSkipped, commentsAdded, commentsSkipped };
+      importSummary = { added, skipped, journalAdded, journalSkipped, rulesReplaced, rulesDaysAdded, rulesDaysSkipped, affirmDaysAdded, affirmDaysSkipped, boardAdded, boardSkipped, commentsAdded, commentsSkipped };
       status = { msg: 'Import complete.', error: false };
       render();
     };
@@ -1513,10 +1655,12 @@
     afterClear('All journal entries cleared.');
   }
 
-  function resetRules() {
+  function clearAllRules() {
+    rulesByDate = {};
     rules = defaultRules();
+    saveRulesByDate();
     saveRules();
-    afterClear('Rules reset to defaults.');
+    afterClear('All daily rules cleared.');
   }
 
   function clearBoard() {
@@ -1532,6 +1676,8 @@
     trades = [];
     journalEntries = [];
     rules = defaultRules();
+    rulesByDate = {};
+    affirmationsByDate = {};
     boardMarks = {};
     boardComments = {};
     boardFocusedDate = null;
@@ -1540,6 +1686,8 @@
     saveTrades();
     saveJournal();
     saveRules();
+    saveRulesByDate();
+    saveAffirmations();
     saveBoard();
     saveBoardComments();
     saveBoardPrefs();
@@ -1988,6 +2136,7 @@
         <label>FROM <input type="date" id="trades-from" value="${tradesFrom}"></label>
         <label>TO <input type="date" id="trades-to" value="${tradesTo}"></label>
         <button class="filter-btn" id="trades-apply">Apply</button>
+        <button class="filter-btn ghost" id="trades-yesterday">Yesterday</button>
         <button class="filter-btn ghost" id="trades-clear">Clear</button>
         <div class="filter-count">${filtered.length} of ${trades.length} trades</div>
       </div>
@@ -2049,6 +2198,7 @@
         <label>FROM <input type="date" id="dash-from" value="${dashFrom}"></label>
         <label>TO <input type="date" id="dash-to" value="${dashTo}"></label>
         <button class="filter-btn" id="dash-apply">Apply</button>
+        <button class="filter-btn ghost" id="dash-yesterday">Yesterday</button>
         <button class="filter-btn ghost" id="dash-clear">Clear</button>
         <div class="filter-count">${filtered.length} of ${trades.length} trades</div>
       </div>
@@ -2196,18 +2346,17 @@
   }
 
   function renderRuleCompliance(filteredTrades) {
-    const r = rules || defaultRules();
-    if (!hasAnyEnforceableRule(r)) {
-      return `<div class="callout neutral">No enforceable limits set yet. Add a daily loss limit, max trades, size limit, or consecutive-loss limit on the Rules tab to see this section come alive.</div>`;
-    }
     const dayAggs = computeDayAggregates(filteredTrades);
-    const withViolations = dayAggs
-      .map(d => ({ ...d, violations: checkDayViolations(d, r) }))
-      .filter(d => d.violations.length > 0);
-
     if (dayAggs.length === 0) {
       return `<div class="empty" style="padding:24px;">No trades in range to check.</div>`;
     }
+    if (!dayAggs.some(d => hasAnyEnforceableRule(rulesForDate(d.date)))) {
+      return `<div class="callout neutral">No enforceable limits set yet. Add a daily loss limit, max trades, size limit, or consecutive-loss limit on the Rules tab to see this section come alive.</div>`;
+    }
+    const withViolations = dayAggs
+      .map(d => ({ ...d, violations: checkDayViolations(d, rulesForDate(d.date)) }))
+      .filter(d => d.violations.length > 0);
+
     if (withViolations.length === 0) {
       return `<div class="callout positive">No rule violations in ${dayAggs.length} day${dayAggs.length === 1 ? '' : 's'} in range.</div>`;
     }
@@ -2223,8 +2372,12 @@
     `;
   }
 
+  function tradesForDate(dateStr) {
+    return trades.filter(t => tradeLocalDateStr(t) === dateStr);
+  }
+
   function computeDayTradeSummary(dateStr) {
-    const dayTrades = trades.filter(t => tradeLocalDateStr(t) === dateStr);
+    const dayTrades = tradesForDate(dateStr);
     if (!dayTrades.length) return null;
     const netTotal = dayTrades.reduce((s, t) => s + t.pnl_net, 0);
     const wins = dayTrades.filter(t => t.pnl_net > 0).length;
@@ -2357,9 +2510,10 @@
     const failedRules = ADHERENCE_RULES.filter(r => entry.adherence && entry.adherence[r.id] === false);
     const adherenceClass = ac.total === 0 ? '' : (ac.failed === 0 ? 'pos' : (ac.passed === 0 ? 'neg' : ''));
     return `
-      <div class="journal-entry">
+      <div class="journal-entry" data-view-id="${entry.id}" style="cursor:pointer;">
         <div class="journal-entry-header">
           <div class="journal-entry-date">${entry.date}</div>
+          ${renderBoardStatusBadge(entry.date)}
           ${entry.mood ? `<div class="journal-entry-mood">MOOD ${entry.mood}</div>` : ''}
           ${entry.dayRating ? `<div class="journal-entry-mood">DAY ${entry.dayRating}/5</div>` : ''}
           ${entry.targetHit ? `<div class="journal-entry-mood pos">COMBINES CAUGHT</div>` : ''}
@@ -2409,9 +2563,71 @@
     `;
   }
 
+  function renderRulesSnapshot(snap) {
+    if (!snap) return `<div class="target-hint muted">No rules recorded for this entry (saved before this feature existed).</div>`;
+    const rows = [
+      ['Daily loss limit ($)', snap.dailyLossLimit],
+      ['Max trades per day', snap.maxTradesPerDay],
+      ['Max size per trade (contracts)', snap.maxSizePerTrade],
+      ['Max consecutive losses', snap.maxConsecutiveLosses],
+      ['Sessions to trade', snap.sessionsToTrade],
+      ['Max time before break (min)', snap.maxTimeBeforeBreak]
+    ];
+    const rowsHtml = rows.map(([label, val]) => `
+      <label class="rules-field"><span>${label}</span><div>${val === null || val === undefined || val === '' ? '—' : val}</div></label>
+    `).join('');
+    return `
+      <div class="rules-grid">${rowsHtml}</div>
+      ${snap.notes ? `<div class="journal-entry-text" style="margin-top:8px;">${snap.notes.replace(/</g, '&lt;')}</div>` : ''}
+    `;
+  }
+
+  function renderJournalDetail(entry) {
+    const dayTrades = tradesForDate(entry.date);
+    const affirmations = entry.affirmationsSnapshot || [];
+    return `
+      <div class="journal-form">
+        <div class="journal-form-header">JOURNAL — ${entry.date}</div>
+        <div class="journal-form-actions" style="margin-bottom: 14px;">
+          <button class="filter-btn ghost" id="journal-detail-back">&larr; Back to journal</button>
+        </div>
+
+        <div class="section-label">ENTRY</div>
+        ${entry.mood ? `<div class="journal-entry-mood">MOOD ${entry.mood}</div>` : ''}
+        ${entry.dayRating ? `<div class="journal-entry-mood">DAY ${entry.dayRating}/5</div>` : ''}
+        ${entry.targetHit ? `<div class="journal-entry-mood pos">COMBINES CAUGHT</div>` : ''}
+        ${entry.targetRating ? `<div class="journal-entry-mood">COMBINES CAUGHT ${entry.targetRating}/5</div>` : ''}
+        ${(entry.tags && entry.tags.length) ? `<div class="journal-entry-tags">${entry.tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+        ${(entry.emotionTags && entry.emotionTags.length) ? `<div class="journal-entry-tags">${entry.emotionTags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+        ${(entry.mistakeTags && entry.mistakeTags.length) ? `<div class="journal-entry-tags">${entry.mistakeTags.map(t => `<span class="violation-badge">${t}</span>`).join('')}</div>` : ''}
+        <div class="journal-entry-text" style="margin-top:8px;">${entry.text ? entry.text.replace(/</g, '&lt;') : '<span class="empty-text">No notes.</span>'}</div>
+
+        <div class="section-label" style="margin-top:18px;">DISCIPLINE BOARD THAT DAY</div>
+        ${renderBoardStatusLegend(entry.date)}
+        ${boardComments[entry.date] ? `<div class="journal-entry-text" style="margin-top:6px;">${boardComments[entry.date].replace(/</g, '&lt;')}</div>` : ''}
+
+        <div class="section-label" style="margin-top:18px;">RULES THAT DAY</div>
+        ${renderRulesSnapshot(entry.rulesSnapshot)}
+
+        <div class="section-label" style="margin-top:18px;">TOP 3 AFFIRMATIONS THAT DAY</div>
+        ${affirmations.length
+          ? `<ul class="affirm-list">${affirmations.map(a => `<li class="affirm-item">${a.replace(/</g, '&lt;')}</li>`).join('')}</ul>`
+          : `<div class="target-hint muted">No affirmations recorded for this day.</div>`}
+
+        <div class="section-label" style="margin-top:18px;">TRADES THAT DAY</div>
+        ${dayTrades.length ? renderTable(dayTrades) : `<div class="target-hint muted">No trades logged for this date.</div>`}
+      </div>
+    `;
+  }
+
   function renderJournalTab() {
     if (!journalDraft) {
       journalDraft = emptyDraft();
+    }
+    if (journalDetailId) {
+      const entry = journalEntries.find(e => e.id === journalDetailId);
+      if (entry) return renderJournalDetail(entry);
+      journalDetailId = null;
     }
     const tags = allJournalTags();
     const mistakesUsed = allMistakeTagsUsed();
@@ -2514,11 +2730,17 @@
         root.querySelectorAll('[data-adherence]').forEach(cb => {
           adherence[cb.dataset.adherence] = cb.checked;
         });
+        const dayAffirm = affirmationsByDate[date];
+        const affirmationsSnapshot = dayAffirm && dayAffirm.picks
+          ? dayAffirm.picks.map(key => affirmationTextForKey(key)).filter(Boolean)
+          : [];
         const fields = {
           date, tags, text, mood: journalDraft.mood,
           adherence, emotionTags: journalDraft.emotionTags || [], mistakeTags: journalDraft.mistakeTags || [],
           dayRating: journalDraft.dayRating,
-          targetHit: !!journalDraft.targetHit, targetRating: journalDraft.targetRating
+          targetHit: !!journalDraft.targetHit, targetRating: journalDraft.targetRating,
+          rulesSnapshot: { ...rulesForDate(date) },
+          affirmationsSnapshot
         };
         if (journalDraft.id) {
           const existing = journalEntries.find(e => e.id === journalDraft.id);
@@ -2546,8 +2768,29 @@
       });
     }
 
+    root.querySelectorAll('[data-view-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        journalDetailId = card.dataset.viewId;
+        confirmDeleteId = null;
+        render();
+        const detailEl = root.querySelector('.journal-form');
+        if (detailEl && typeof detailEl.scrollIntoView === 'function') {
+          detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    const detailBackBtn = root.querySelector('#journal-detail-back');
+    if (detailBackBtn) {
+      detailBackBtn.addEventListener('click', () => {
+        journalDetailId = null;
+        render();
+      });
+    }
+
     root.querySelectorAll('[data-edit-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const entry = journalEntries.find(e => e.id === btn.dataset.editId);
         if (entry) {
           journalDraft = {
@@ -2569,7 +2812,8 @@
     });
 
     root.querySelectorAll('[data-delete-id]').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const id = btn.dataset.deleteId;
         if (confirmDeleteId === id) {
           journalEntries = journalEntries.filter(e => e.id !== id);
@@ -3006,10 +3250,7 @@
       const dates = trades.map(t => tradeLocalDateStr(t)).sort();
       dateRange = dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} → ${dates[dates.length - 1]}`;
     }
-    const rulesConfigured = !!(rules && (
-      rules.dailyLossLimit != null || rules.maxTradesPerDay != null || rules.maxSizePerTrade != null ||
-      rules.maxConsecutiveLosses != null || rules.sessionsToTrade || rules.maxTimeBeforeBreak != null || rules.notes
-    ));
+    const rulesDaysCount = Object.keys(rulesByDate).length;
 
     const summaryHtml = `
       <div class="stat-row" style="grid-template-columns: repeat(5, 1fr);">
@@ -3017,7 +3258,7 @@
         ${statCard(ticks, 'Date range', dateRange, 'neutral')}
         ${statCard(ticks, 'Journal entries', journalEntries.length, 'neutral')}
         ${statCard(ticks, 'Board days marked', Object.keys(boardMarks).length, 'neutral')}
-        ${statCard(ticks, 'Rules configured', rulesConfigured ? 'Yes' : 'No', rulesConfigured ? 'positive' : 'neutral')}
+        ${statCard(ticks, 'Days with rules saved', rulesDaysCount, rulesDaysCount ? 'positive' : 'neutral')}
       </div>
     `;
 
@@ -3040,18 +3281,20 @@
         <div class="section-label">IMPORT BACKUP</div>
         <div class="upload-zone" id="backup-zone">
           <div class="icon-line">&#9650; DROP BACKUP JSON OR SELECT FILE</div>
-          <div class="sub">Trades and journal entries are matched by id — existing ones are kept, only new ones are added. Board marks fill empty days only. Rules are replaced by the file's.</div>
+          <div class="sub">Trades and journal entries are matched by id — existing ones are kept, only new ones are added. Board marks, daily rules, and daily affirmations fill empty days only. Legacy single-file rules (from old backups) are replaced by the file's.</div>
           <button class="upload-btn" id="backup-btn">Select backup file</button>
           <input type="file" id="backup-file-input" accept=".json" style="display:none;">
           ${status.msg ? `<div class="upload-status ${status.error ? 'error' : ''}">${status.msg}</div>` : ''}
         </div>
         ${importSummary ? `
-          <div class="callout ${importSummary.added || importSummary.journalAdded || importSummary.boardAdded || importSummary.rulesReplaced ? 'positive' : 'neutral'}">
+          <div class="callout ${importSummary.added || importSummary.journalAdded || importSummary.boardAdded || importSummary.rulesReplaced || importSummary.rulesDaysAdded || importSummary.affirmDaysAdded ? 'positive' : 'neutral'}">
             Trades: <strong>${importSummary.added}</strong> added, ${importSummary.skipped} duplicate${importSummary.skipped === 1 ? '' : 's'} skipped.
             Journal: <strong>${importSummary.journalAdded}</strong> added, ${importSummary.journalSkipped} duplicate${importSummary.journalSkipped === 1 ? '' : 's'} skipped.
             Board: <strong>${importSummary.boardAdded || 0}</strong> day${(importSummary.boardAdded || 0) === 1 ? '' : 's'} added, ${importSummary.boardSkipped || 0} already marked.
             Comments: <strong>${importSummary.commentsAdded || 0}</strong> added, ${importSummary.commentsSkipped || 0} already had one.
-            ${importSummary.rulesReplaced ? ' Rules replaced.' : ''}
+            Daily rules: <strong>${importSummary.rulesDaysAdded || 0}</strong> day${(importSummary.rulesDaysAdded || 0) === 1 ? '' : 's'} added, ${importSummary.rulesDaysSkipped || 0} already saved.
+            Daily affirmations: <strong>${importSummary.affirmDaysAdded || 0}</strong> day${(importSummary.affirmDaysAdded || 0) === 1 ? '' : 's'} added, ${importSummary.affirmDaysSkipped || 0} already saved.
+            ${importSummary.rulesReplaced ? ' Legacy rules replaced.' : ''}
           </div>
         ` : ''}
       </div>
@@ -3089,7 +3332,7 @@
         <div class="journal-form-actions" style="flex-wrap:wrap; gap:10px;">
           ${clearBtn('trades', 'Clear all trades', trades.length)}
           ${clearBtn('journal', 'Clear all journal entries', journalEntries.length)}
-          ${clearBtn('rules', 'Reset rules to defaults', 1)}
+          ${clearBtn('rules', 'Clear all daily rules', Object.keys(rulesByDate).length)}
           ${clearBtn('board', 'Clear all board marks & comments', Object.keys(boardMarks).length + Object.keys(boardComments).length)}
           ${clearBtn('all', 'Erase all TRIM data', trades.length + journalEntries.length + Object.keys(boardMarks).length)}
         </div>
@@ -3152,7 +3395,7 @@
         if (clearArmed !== action) { clearArmed = action; render(); return; }
         if (action === 'trades') clearAllTrades();
         else if (action === 'journal') clearAllJournal();
-        else if (action === 'rules') resetRules();
+        else if (action === 'rules') clearAllRules();
         else if (action === 'board') clearBoard();
         else if (action === 'all') clearEverything();
       });
@@ -3200,25 +3443,108 @@
     }
   ];
 
+  function affirmationTextForKey(key) {
+    const [gi, ii] = key.split('-').map(n => parseInt(n, 10));
+    const group = AFFIRMATIONS[gi];
+    return group && group.items[ii] ? group.items[ii] : null;
+  }
+
   function renderAffirmationsTab() {
-    const groupsHtml = AFFIRMATIONS.map(g => `
+    const dateStr = affirmDate || todayLocalStr();
+    const saved = affirmationsByDate[dateStr];
+    const picks = (saved && saved.picks) || [];
+    const groupsHtml = AFFIRMATIONS.map((g, gi) => `
       <div class="affirm-group">
         <div class="section-label">${g.title.replace(/</g, '&lt;')}</div>
         ${g.intro ? `<div class="affirm-intro">${g.intro}</div>` : ''}
         <ul class="affirm-list">
-          ${g.items.map(item => `<li class="affirm-item">${item.replace(/</g, '&lt;')}</li>`).join('')}
+          ${g.items.map((item, ii) => {
+            const key = `${gi}-${ii}`;
+            const checked = picks.includes(key);
+            const disable = !checked && picks.length >= 3;
+            return `
+              <li class="affirm-item">
+                <label class="check-row">
+                  <input type="checkbox" data-affirm-key="${key}" ${checked ? 'checked' : ''} ${disable ? 'disabled' : ''}>
+                  <span>${item.replace(/</g, '&lt;')}</span>
+                </label>
+              </li>
+            `;
+          }).join('')}
         </ul>
       </div>
     `).join('');
-    return `<div class="rules-panel">${groupsHtml}</div>`;
+    return `
+      <div class="rules-panel">
+        <div class="section-label">SELECT YOUR TOP 3 MOST IMPORTANT AFFIRMATIONS FOR THE DAY <span class="section-hint" id="affirm-count">${picks.length}/3 selected</span></div>
+        <div class="journal-form-row">
+          <label>DATE <input type="date" id="affirm-date" value="${dateStr}"></label>
+        </div>
+        ${groupsHtml}
+        <div class="journal-form-actions" style="margin-top: 4px;">
+          <button class="upload-btn" id="affirm-save">Save top 3 for this day</button>
+          <div class="rules-updated">${saved && saved.updated_at ? 'Last saved: ' + new Date(saved.updated_at).toLocaleString('sv-SE', { timeZone: 'Europe/Stockholm' }) : 'Not saved for this date yet'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireAffirmationsTab() {
+    const dateInput = root.querySelector('#affirm-date');
+    if (dateInput) {
+      dateInput.addEventListener('change', () => {
+        affirmDate = dateInput.value || todayLocalStr();
+        render();
+      });
+    }
+    root.querySelectorAll('[data-affirm-key]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const dateStr = affirmDate || todayLocalStr();
+        const current = (affirmationsByDate[dateStr] && affirmationsByDate[dateStr].picks) || [];
+        const key = cb.dataset.affirmKey;
+        let picks = current.slice();
+        if (cb.checked) {
+          if (picks.length >= 3) { cb.checked = false; return; }
+          picks.push(key);
+        } else {
+          picks = picks.filter(k => k !== key);
+        }
+        affirmationsByDate[dateStr] = { ...(affirmationsByDate[dateStr] || {}), picks };
+        render();
+      });
+    });
+    const saveBtn = root.querySelector('#affirm-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        const dateStr = affirmDate || todayLocalStr();
+        const picks = (affirmationsByDate[dateStr] && affirmationsByDate[dateStr].picks) || [];
+        affirmationsByDate[dateStr] = { picks, updated_at: new Date().toISOString() };
+        await saveAffirmations();
+        status = { msg: 'Affirmations saved for ' + dateStr + '.', error: false };
+        render();
+      });
+    }
   }
 
   function renderRulesTab() {
-    const r = rules || defaultRules();
-    const updated = r.updated_at ? new Date(r.updated_at).toLocaleString('sv-SE', { timeZone: 'Europe/Stockholm' }) : 'never';
+    const dateStr = rulesDate || todayLocalStr();
+    const exact = rulesByDate[dateStr];
+    const r = rulesForDate(dateStr);
+    let statusLine;
+    if (exact && exact.updated_at) {
+      statusLine = 'Last saved for this day: ' + new Date(exact.updated_at).toLocaleString('sv-SE', { timeZone: 'Europe/Stockholm' });
+    } else {
+      const priorDates = Object.keys(rulesByDate).filter(d => d <= dateStr).sort();
+      statusLine = priorDates.length
+        ? `Carried forward from ${priorDates[priorDates.length - 1]} — edit and save to set rules for this day specifically.`
+        : 'Not saved for this date yet — showing defaults.';
+    }
     return `
       <div class="rules-panel">
-        <div class="section-label">ENFORCEABLE LIMITS <span class="section-hint">— checked against your trades on the Dashboard as a passive flag</span></div>
+        <div class="section-label">ENFORCEABLE LIMITS <span class="section-hint">— saved per day, checked against that day's trades on the Dashboard as a passive flag</span></div>
+        <div class="journal-form-row">
+          <label>DATE <input type="date" id="rule-date" value="${dateStr}"></label>
+        </div>
         <div class="rules-grid">
           <label class="rules-field">
             <span>Daily loss limit ($)</span>
@@ -3250,14 +3576,21 @@
         <textarea id="rule-notes" placeholder="Anything else worth writing down.">${r.notes || ''}</textarea>
 
         <div class="journal-form-actions" style="margin-top: 4px;">
-          <button class="upload-btn" id="rules-save">Save rules</button>
-          <div class="rules-updated">Last updated: ${updated}</div>
+          <button class="upload-btn" id="rules-save">Save rules for this day</button>
+          <div class="rules-updated">${statusLine}</div>
         </div>
       </div>
     `;
   }
 
   function wireRulesTab() {
+    const dateInput = root.querySelector('#rule-date');
+    if (dateInput) {
+      dateInput.addEventListener('change', () => {
+        rulesDate = dateInput.value || todayLocalStr();
+        render();
+      });
+    }
     const saveBtn = root.querySelector('#rules-save');
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
@@ -3265,7 +3598,8 @@
           const v = root.querySelector(id).value;
           return v === '' ? null : parseFloat(v);
         };
-        rules = {
+        const dateStr = rulesDate || todayLocalStr();
+        rulesByDate[dateStr] = {
           dailyLossLimit: numOrNull('#rule-dailyLossLimit'),
           maxTradesPerDay: numOrNull('#rule-maxTradesPerDay'),
           maxSizePerTrade: numOrNull('#rule-maxSizePerTrade'),
@@ -3275,8 +3609,8 @@
           notes: root.querySelector('#rule-notes').value || '',
           updated_at: new Date().toISOString()
         };
-        await saveRules();
-        status = { msg: 'Rules saved.', error: false };
+        await saveRulesByDate();
+        status = { msg: 'Rules saved for ' + dateStr + '.', error: false };
         render();
       });
     }
@@ -3339,6 +3673,7 @@
         importSummary = null;
         exportFallback = null;
         clearArmed = null;
+        journalDetailId = null;
         render();
       });
     });
@@ -3376,6 +3711,14 @@
     if (clearBtn) {
       clearBtn.addEventListener('click', () => { dashFrom = ''; dashTo = ''; render(); });
     }
+    const dashYesterdayBtn = root.querySelector('#dash-yesterday');
+    if (dashYesterdayBtn) {
+      dashYesterdayBtn.addEventListener('click', () => {
+        dashFrom = yesterdayLocalStr();
+        dashTo = yesterdayLocalStr();
+        render();
+      });
+    }
 
     const tradesApplyBtn = root.querySelector('#trades-apply');
     const tradesClearBtn = root.querySelector('#trades-clear');
@@ -3388,6 +3731,14 @@
     }
     if (tradesClearBtn) {
       tradesClearBtn.addEventListener('click', () => { tradesFrom = ''; tradesTo = ''; render(); });
+    }
+    const tradesYesterdayBtn = root.querySelector('#trades-yesterday');
+    if (tradesYesterdayBtn) {
+      tradesYesterdayBtn.addEventListener('click', () => {
+        tradesFrom = yesterdayLocalStr();
+        tradesTo = yesterdayLocalStr();
+        render();
+      });
     }
 
     root.querySelectorAll('.mood-select').forEach(sel => {
@@ -3402,6 +3753,7 @@
     if (activeTab === 'journal') wireJournalTab();
     if (activeTab === 'board') wireBoardTab();
     if (activeTab === 'rules') wireRulesTab();
+    if (activeTab === 'affirmations') wireAffirmationsTab();
     if (activeTab === 'data') wireDataTab();
   }
 
