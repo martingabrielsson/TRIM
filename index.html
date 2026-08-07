@@ -714,6 +714,14 @@
     box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), inset 0 -2px 2px rgba(169,121,31,0.35), 0 1px 3px rgba(169,121,31,0.35);
   }
   #trim-root .coin.filled:hover { transform: scale(1.1); }
+  #trim-root .coin.silver:hover { border-color: #a9a9a9; }
+  #trim-root .coin.silver.filled {
+    background: radial-gradient(circle at 34% 30%, #f4f4f4 0%, #c2c2c2 55%, #8f8f8f 100%);
+    border-color: #8f8f8f;
+    color: #3a3a3a;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), inset 0 -2px 2px rgba(120,120,120,0.35), 0 1px 3px rgba(120,120,120,0.35);
+  }
+  #trim-root .coin.silver.filled:hover { transform: scale(1.1); }
   #trim-root .journal-form textarea {
     width: 100%;
     min-height: 80px;
@@ -764,6 +772,7 @@
     font-weight: 600;
   }
   #trim-root .journal-entry-mood.pos { color: var(--positive); background: rgba(63,143,116,0.1); border-color: rgba(63,143,116,0.3); }
+  #trim-root .journal-entry-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
   #trim-root .journal-entry-actions { margin-left: auto; display: flex; gap: 8px; }
   #trim-root .mini-btn {
     background: var(--panel);
@@ -1114,16 +1123,16 @@
   const ADHERENCE_RULES = [
     { id: 'stationSetup',    label: 'Trading Station has been setup to meet today\'s Trading rules prior to session start', emphasis: true },
     { id: 'onlyPlanSetups',  label: 'Only traded the setups I planned for today' },
-    { id: 'respectedOpen',   label: 'Respected the no-trade window at the open' },
-    { id: 'stoppedAtEnd',    label: 'Stopped taking new trades at my session end time' },
+    { id: 'respectedOpen',   label: 'Respected the no-trade window at the open (First 15 mins)' },
+    { id: 'stoppedAtEnd',    label: 'Stopped taking new trades at my session end time (Focus at one session 100% than stay out)' },
     { id: 'noRevenge',       label: 'Did not revenge trade after a loss' },
-    { id: 'tookBreak',       label: 'Took the mandatory break after consecutive losses' },
+    { id: 'tookBreak',       label: 'Took the mandatory break after consecutive losses (15 mins)' },
     { id: 'sizeInPlan',      label: 'Stayed within my max size per trade' },
     { id: 'withinLossLimit', label: 'Stayed within my daily loss limit' },
     { id: 'stopHonoured',    label: 'Honoured every planned stop — never moved one' }
   ];
-  const EMOTION_TAGS = ['Disciplined', 'Patient', 'Confident', 'Distracted', 'Anxious', 'Frustrated', 'Euphoric'];
-  const MISTAKE_TAGS = ['Revenge trade', 'FOMO', 'Overtrading', 'Hesitation', 'Early exit', 'Moved stop', 'Oversized', 'No stop', 'Off-plan setup'];
+  const EMOTION_TAGS = ['Disciplined', 'Patient', 'Confident', 'Distracted', 'Anxious', 'Frustrated', 'Euphoric', 'Focused', 'In the zone', 'Stressed', 'Impatient', 'Greedy', 'Revenge mode'];
+  const MISTAKE_TAGS = ['Revenge trade', 'FOMO', 'Overtrading', 'Hesitation', 'Early exit', 'Oversized', 'Moved stop', 'Off-plan setup'];
   const COMBINE_COST = 120; // daily cost of the trading combine — the financial target
 
   function defaultRules() {
@@ -1235,7 +1244,7 @@
   // Compact single badge for the journal entry card list.
   function renderBoardStatusBadge(dateStr) {
     const mark = boardMarks[dateStr] || 'n';
-    const label = mark === 'n' ? 'UNMARKED' : BOARD_STATUS_ITEMS.find(([k]) => k === mark)[1];
+    const label = mark === 'n' ? 'No discipline selection' : BOARD_STATUS_ITEMS.find(([k]) => k === mark)[1];
     const color = BOARD_SWATCH_COLOR[mark];
     return `<span class="journal-entry-badge"${color ? ` style="border-color:${color}; color:${color};"` : ''}><span class="swatch ${mark}" style="width:9px;height:9px;border-radius:2px;${color ? `background:${color};border-color:${color};` : ''}"></span>${label}</span>`;
   }
@@ -1379,11 +1388,17 @@
     }
   }
 
+  const STALE_DEFAULT_NOTES = 'Opening 15-30 mins Rage Trade @ NY Open. No Trading from work laptop. Make sure to let go of work/family. Trading is a performance sport. Quick in/out market will crush you, stay greatful for what you can get today and leave.';
+
   function loadTrades() {
     trades = loadJSON(STORAGE_KEY, []);
     journalEntries = loadJSON(JOURNAL_KEY, []).map(normalizeEntry);
     rules = { ...defaultRules(), ...loadJSON(RULES_KEY, {}) };
+    if (rules.notes === STALE_DEFAULT_NOTES) rules.notes = '';
     rulesByDate = loadJSON(RULES_BYDATE_KEY, {}) || {};
+    for (const d of Object.keys(rulesByDate)) {
+      if (rulesByDate[d] && rulesByDate[d].notes === STALE_DEFAULT_NOTES) rulesByDate[d].notes = '';
+    }
     rulesDate = todayLocalStr();
     affirmationsByDate = loadJSON(AFFIRM_KEY, {}) || {};
     affirmDate = todayLocalStr();
@@ -2372,6 +2387,25 @@
     `;
   }
 
+  function renderRuleComplianceForDay(dateStr, dayTrades) {
+    if (!dayTrades.length) {
+      return `<div class="empty" style="padding:24px;">No trades on this date to check.</div>`;
+    }
+    const r = rulesForDate(dateStr);
+    if (!hasAnyEnforceableRule(r)) {
+      return `<div class="callout neutral">No enforceable limits set yet. Add a daily loss limit, max trades, size limit, or consecutive-loss limit on the Rules tab to see this section come alive.</div>`;
+    }
+    const dayAgg = computeDayAggregates(dayTrades)[0];
+    const violations = checkDayViolations(dayAgg, r);
+    if (violations.length === 0) {
+      return `<div class="callout positive">No rule violations on this day.</div>`;
+    }
+    return `
+      <div class="callout negative">This day broke ${violations.length} rule${violations.length === 1 ? '' : 's'}.</div>
+      <div class="violation-badges" style="margin-top:10px;">${violations.map(v => `<span class="violation-badge">${v}</span>`).join('')}</div>
+    `;
+  }
+
   function tradesForDate(dateStr) {
     return trades.filter(t => tradeLocalDateStr(t) === dateStr);
   }
@@ -2431,12 +2465,14 @@
   // selected value (like a stack of caught combines) rather than only the
   // exact pick lighting up. Reuses the mood-pick data attributes so the
   // existing click handler in wireJournalTab works unchanged.
-  function coinPickerHtml(selected, name, count) {
+  function coinPickerHtml(selected, name, count, startAt) {
     count = count || 5;
+    startAt = (startAt === undefined || startAt === null) ? 1 : startAt;
     let coins = '';
-    for (let n = 1; n <= count; n++) {
-      const filled = selected != null && n <= selected;
-      coins += `<button type="button" class="coin ${filled ? 'filled' : ''}" data-mood-pick="${n}" data-mood-name="${name}">${n}</button>`;
+    for (let n = startAt; n <= count; n++) {
+      const silver = n === 0;
+      const filled = silver ? selected === 0 : (selected != null && n <= selected && selected > 0);
+      coins += `<button type="button" class="coin ${filled ? 'filled' : ''} ${silver ? 'silver' : ''}" data-mood-pick="${n}" data-mood-name="${name}">${n}</button>`;
     }
     return `<div class="coin-picker" data-mood-group="${name}">${coins}</div>`;
   }
@@ -2463,7 +2499,6 @@
         <div class="journal-form-header">${isEditing ? 'EDIT ENTRY' : 'NEW ENTRY'}</div>
         <div class="journal-form-row">
           <label>DATE <input type="date" id="journal-date" value="${journalDraft.date}"></label>
-          <label>TAGS <input type="text" id="journal-tags" placeholder="e.g. revenge trade, good discipline" value="${(journalDraft.tags || []).join(', ')}"></label>
         </div>
         <div class="journal-form-row">
           <div class="mood-label-row">MOOD / TILT RATING${journalDraft.mood ? `<span class="mood-current">${journalDraft.mood}</span>` : ''}</div>
@@ -2482,17 +2517,13 @@
         <div class="mood-label-row" style="margin-top:14px;">DAY RATING <span class="section-hint">— process, not P&amp;L</span>${journalDraft.dayRating ? `<span class="mood-current">${journalDraft.dayRating}</span>` : ''}</div>
         ${moodPickerHtml(journalDraft.dayRating, 'dayRating', 5)}
 
-        <textarea id="journal-text" placeholder="How did the session feel? What triggered decisions today?" style="margin-top:14px;">${journalDraft.text || ''}</textarea>
+        <textarea id="journal-text" placeholder="How well did you stick to your process? How did the session feel? Most important lesson to carry with you? How did you manage yourself today?" style="margin-top:14px;">${journalDraft.text || ''}</textarea>
 
-        <div class="section-label" style="margin-top:14px;">FINANCIAL TARGET</div>
-        <label class="check-row">
-          <input type="checkbox" id="journal-target-hit" ${journalDraft.targetHit ? 'checked' : ''}>
-          <span>Any Combines caught Today?</span>
-        </label>
+        <div class="section-label" style="margin-top:14px;">HOW MANY COMBINES DID YOU CATCH TODAY?</div>
         ${dayNet
           ? `<div class="target-hint ${dayNet.netTotal >= COMBINE_COST ? 'pos' : 'neg'}">${fmtMoney(dayNet.netTotal)} net today from ${dayNet.count} trade${dayNet.count === 1 ? '' : 's'} — ${dayNet.netTotal >= COMBINE_COST ? 'covers the $120 cost' : `${fmtMoney(COMBINE_COST - dayNet.netTotal)} short of it`}</div>`
           : `<div class="target-hint muted">No trades logged for this date yet — nothing to compare against $120.</div>`}
-        <div style="margin-top:10px;">${coinPickerHtml(journalDraft.targetRating, 'targetRating', 5)}</div>
+        <div style="margin-top:10px;">${coinPickerHtml(journalDraft.targetRating, 'targetRating', 5, 0)}</div>
 
         <div class="journal-form-actions" style="margin-top:22px;">
           <button class="upload-btn" id="journal-save">Save entry</button>
@@ -2514,9 +2545,8 @@
         <div class="journal-entry-header">
           <div class="journal-entry-date">${entry.date}</div>
           ${renderBoardStatusBadge(entry.date)}
-          ${entry.mood ? `<div class="journal-entry-mood">MOOD ${entry.mood}</div>` : ''}
-          ${entry.dayRating ? `<div class="journal-entry-mood">DAY ${entry.dayRating}/5</div>` : ''}
-          ${entry.targetHit ? `<div class="journal-entry-mood pos">COMBINES CAUGHT</div>` : ''}
+          ${entry.mood ? `<div class="journal-entry-mood">MOOD/TILT RATING ${entry.mood}</div>` : ''}
+          ${entry.dayRating ? `<div class="journal-entry-mood">DAY RATING ${entry.dayRating}/5</div>` : ''}
           ${entry.targetRating ? `<div class="journal-entry-mood">COMBINES CAUGHT ${entry.targetRating}/5</div>` : ''}
           <div class="journal-entry-actions">
             <button class="mini-btn" data-edit-id="${entry.id}">Edit</button>
@@ -2593,10 +2623,11 @@
         </div>
 
         <div class="section-label">ENTRY</div>
-        ${entry.mood ? `<div class="journal-entry-mood">MOOD ${entry.mood}</div>` : ''}
-        ${entry.dayRating ? `<div class="journal-entry-mood">DAY ${entry.dayRating}/5</div>` : ''}
-        ${entry.targetHit ? `<div class="journal-entry-mood pos">COMBINES CAUGHT</div>` : ''}
-        ${entry.targetRating ? `<div class="journal-entry-mood">COMBINES CAUGHT ${entry.targetRating}/5</div>` : ''}
+        <div class="journal-entry-badges">
+          ${entry.mood ? `<div class="journal-entry-mood">MOOD/TILT RATING ${entry.mood}</div>` : ''}
+          ${entry.dayRating ? `<div class="journal-entry-mood">DAY RATING ${entry.dayRating}/5</div>` : ''}
+          ${entry.targetRating ? `<div class="journal-entry-mood">COMBINES CAUGHT ${entry.targetRating}/5</div>` : ''}
+        </div>
         ${(entry.tags && entry.tags.length) ? `<div class="journal-entry-tags">${entry.tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
         ${(entry.emotionTags && entry.emotionTags.length) ? `<div class="journal-entry-tags">${entry.emotionTags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
         ${(entry.mistakeTags && entry.mistakeTags.length) ? `<div class="journal-entry-tags">${entry.mistakeTags.map(t => `<span class="violation-badge">${t}</span>`).join('')}</div>` : ''}
@@ -2613,6 +2644,12 @@
         ${affirmations.length
           ? `<ul class="affirm-list">${affirmations.map(a => `<li class="affirm-item">${a.replace(/</g, '&lt;')}</li>`).join('')}</ul>`
           : `<div class="target-hint muted">No affirmations recorded for this day.</div>`}
+
+        <div class="section-label" style="margin-top:18px;">DAY METRICS</div>
+        ${dayTrades.length ? renderStatRow(computeDashboardStats(dayTrades)) : `<div class="target-hint muted">No trades logged for this date.</div>`}
+
+        <div class="section-label" style="margin-top:18px;">RULE COMPLIANCE <span class="section-hint">— passive flag, checked against your Rules page</span></div>
+        ${renderRuleComplianceForDay(entry.date, dayTrades)}
 
         <div class="section-label" style="margin-top:18px;">TRADES THAT DAY</div>
         ${dayTrades.length ? renderTable(dayTrades) : `<div class="target-hint muted">No trades logged for this date.</div>`}
@@ -2681,11 +2718,18 @@
     });
 
     // Double-clicking the first coin clears the rating entirely — the only way
-    // back to "unrated" since there's no zero coin to click.
+    // back to "unrated" for pickers with no zero coin.
     root.querySelectorAll('.coin[data-mood-pick="1"]').forEach(btn => {
       btn.addEventListener('dblclick', () => {
         if (btn.dataset.moodName === 'targetRating') journalDraft.targetRating = null;
         else if (btn.dataset.moodName === 'dayRating') journalDraft.dayRating = null;
+        render();
+      });
+    });
+    // Double-clicking the zero coin clears the rating entirely too.
+    root.querySelectorAll('.coin[data-mood-pick="0"]').forEach(btn => {
+      btn.addEventListener('dblclick', () => {
+        if (btn.dataset.moodName === 'targetRating') journalDraft.targetRating = null;
         render();
       });
     });
@@ -2696,13 +2740,6 @@
       dateInput.addEventListener('change', () => {
         journalDraft.date = dateInput.value || todayLocalStr();
         render();
-      });
-    }
-
-    const targetHitInput = root.querySelector('#journal-target-hit');
-    if (targetHitInput) {
-      targetHitInput.addEventListener('change', () => {
-        journalDraft.targetHit = targetHitInput.checked;
       });
     }
 
@@ -2723,8 +2760,7 @@
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
         const date = root.querySelector('#journal-date').value || todayLocalStr();
-        const tagsRaw = root.querySelector('#journal-tags').value || '';
-        const tags = [...new Set(tagsRaw.split(',').map(t => t.trim()).filter(Boolean))];
+        const tags = journalDraft.tags || [];
         const text = root.querySelector('#journal-text').value || '';
         const adherence = {};
         root.querySelectorAll('[data-adherence]').forEach(cb => {
@@ -2738,7 +2774,7 @@
           date, tags, text, mood: journalDraft.mood,
           adherence, emotionTags: journalDraft.emotionTags || [], mistakeTags: journalDraft.mistakeTags || [],
           dayRating: journalDraft.dayRating,
-          targetHit: !!journalDraft.targetHit, targetRating: journalDraft.targetRating,
+          targetHit: !!(journalDraft.targetRating > 0), targetRating: journalDraft.targetRating,
           rulesSnapshot: { ...rulesForDate(date) },
           affirmationsSnapshot
         };
@@ -3405,7 +3441,7 @@
   const AFFIRMATIONS = [
     {
       title: 'Probability mindset (Mark Douglas, Trading in the Zone)',
-      intro: 'his five truths boil down to: anything can happen, you don\'t need to know what\'s next to make money, wins and losses are randomly distributed across any edge, an edge is only a probability, and every moment is unique: <a href="https://enlightenedstocktrading.com/mark-douglas/" target="_blank" rel="noopener">Enlightened Stock Trading</a>',
+      intro: 'his five truths boil down to: anything can happen, you don\'t need to know what\'s next to make money, wins and losses are randomly distributed across any edge, an edge is only a probability, and every moment is unique.',
       items: [
         "I don't need to be right on this trade. I need to be right over a hundred of them.",
         'Anything can happen next. My job is to be prepared, not to predict.',
